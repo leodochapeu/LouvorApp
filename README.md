@@ -46,15 +46,17 @@ lib/
         widgets/              # LoginForm
     songs/
       domain/
-        entities/             # Song, SongInput
+        entities/             # Song, SongInput, SongLine (+ SongLineType)
+        lyrics_parser.dart     # engine texto <-> jsonb (ver seção abaixo)
         repositories/         # SongRepository (interface)
       data/
-        models/                # SongModel (mapeamento JSON <-> Song)
+        models/                # SongModel, SongLineModel (JSON <-> entidades)
         repositories/          # SongRepositoryImpl (Supabase)
       presentation/
         providers/             # lista, busca, detalhe, mutações (CRUD)
         pages/                  # SongsListPage, SongDetailPage, SongFormPage
-        widgets/                # SongCard, AuthorsInput, MusicalKeyDropdown...
+        widgets/                # SongCard, AuthorsInput, MusicalKeyDropdown,
+                                 # SongLinesView, LyricsPreview...
 supabase/
   schema.sql                 # script único para criar tabela + RLS + realtime
 ```
@@ -63,16 +65,46 @@ Cada feature segue `domain -> data -> presentation`. `domain` não sabe que o
 Supabase existe (só interfaces); `data` implementa contra o Supabase;
 `presentation` só conhece as interfaces/providers, nunca o SDK diretamente.
 
+## Formato da letra/cifra
+
+No formulário de música, a pessoa cola/digita um texto único, uma linha por
+vez, usando marcadores simples. O `LyricsParser`
+(`lib/features/songs/domain/lyrics_parser.dart`) converte isso em uma lista
+de objetos `{type, content}` — é esse array que vira o jsonb salvo na coluna
+`songs.lyrics`. O formulário mostra uma pré-visualização ao vivo já com o
+estilo de cada tipo.
+
+| Marcador                    | Type      | Exemplo de entrada              | Estilo na tela              |
+|------------------------------|-----------|----------------------------------|------------------------------|
+| `> texto`                    | `sessao`  | `> Refrão`                       | título / negrito             |
+| `\|\| texto \|\|`            | `cifra`   | `\|\| C  Am  F  G \|\|` ou `\|\| 1 6 4 5 \|\|` | cor do tema (primary) |
+| `_"texto"_`                  | `letra`   | `_"Eu sei que tu és bom"_`       | itálico                      |
+| qualquer outra coisa         | `extras`  | `(repete 2x)`                    | cinza                        |
+
+Linhas em branco viram espaçamento (uma entrada `extras` vazia), preservando
+a formatação original da cifra. Ao editar uma música existente, o formulário
+reconstrói o texto marcado a partir do jsonb salvo (`LyricsParser.toRawText`),
+então a pessoa continua editando o texto puro, não o JSON.
+
 ## Configurando o Supabase
 
 1. Crie um projeto em https://supabase.com.
 2. Abra o **SQL Editor** do projeto e rode o conteúdo de
-   [`supabase/schema.sql`](supabase/schema.sql) uma única vez. Isso cria:
-   - a tabela `songs` (título, autores, tom original, tom alterado, letra);
-   - índices para busca por título/autor;
+   [`supabase/schema.sql`](supabase/schema.sql). Isso cria:
+   - a tabela `songs` (título, autores, tom original, tom alterado, e
+     `lyrics` como `jsonb` — ver "Formato da letra/cifra" acima);
+   - índices para busca por título/autor/conteúdo;
    - Row Level Security: **leitura pública**, **escrita só autenticado**;
    - a tabela habilitada no Realtime (a listagem atualiza sozinha quando
      alguém edita/cadastra).
+
+   O script é seguro para rodar mais de uma vez: se a tabela já existir com a
+   coluna `lyrics` antiga (`text`), ele migra automaticamente para `jsonb`,
+   preservando o texto antigo como uma linha `extras`. Eu não tenho como
+   rodar esse script por vocês a partir daqui — só recebi a *anon key* no
+   `.env`, que não tem permissão para alterar o schema (só a senha do
+   Postgres/service role teria, e não é algo que peço para vocês
+   compartilharem). Basta colar o arquivo no SQL Editor e rodar.
 3. Em **Project Settings -> API**, copie a **Project URL** e a
    **anon/public key** (ou "publishable key", dependendo da nomenclatura do
    seu projeto).

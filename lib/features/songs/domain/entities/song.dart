@@ -1,7 +1,9 @@
 import 'package:equatable/equatable.dart';
 
+import 'song_line.dart';
+
 /// A worship song: title, authors, its original key, an optional key it's
-/// currently being played in, and the lyrics+chords ("cifra") text.
+/// currently being played in, and the lyrics+chords ("cifra") content.
 class Song extends Equatable {
   const Song({
     required this.id,
@@ -9,7 +11,7 @@ class Song extends Equatable {
     required this.authors,
     required this.originalKey,
     this.currentKey,
-    required this.lyrics,
+    required this.lines,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -25,8 +27,9 @@ class Song extends Equatable {
   /// key than [originalKey].
   final String? currentKey;
 
-  /// Full lyrics with chords inlined (the "cifra"), stored as plain text.
-  final String lyrics;
+  /// Lyrics + chords ("cifra"), as an ordered list of tagged lines — see
+  /// [SongLine] and `LyricsParser` for how raw pasted text becomes this.
+  final List<SongLine> lines;
 
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -46,7 +49,7 @@ class Song extends Equatable {
     String? originalKey,
     String? currentKey,
     bool clearCurrentKey = false,
-    String? lyrics,
+    List<SongLine>? lines,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -56,7 +59,7 @@ class Song extends Equatable {
       authors: authors ?? this.authors,
       originalKey: originalKey ?? this.originalKey,
       currentKey: clearCurrentKey ? null : (currentKey ?? this.currentKey),
-      lyrics: lyrics ?? this.lyrics,
+      lines: lines ?? this.lines,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -69,7 +72,7 @@ class Song extends Equatable {
         authors,
         originalKey,
         currentKey,
-        lyrics,
+        lines,
         createdAt,
         updatedAt,
       ];
@@ -83,15 +86,15 @@ class SongInput extends Equatable {
     required this.authors,
     required this.originalKey,
     this.currentKey,
-    required this.lyrics,
+    required this.lines,
   });
 
   final String title;
   final List<String> authors;
   final String originalKey;
   final String? currentKey;
-  final String lyrics;
+  final List<SongLine> lines;
 
   @override
-  List<Object?> get props => [title, authors, originalKey, currentKey, lyrics];
+  List<Object?> get props => [title, authors, originalKey, currentKey, lines];
 }

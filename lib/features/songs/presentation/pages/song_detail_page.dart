@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/router/app_routes.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/chips/app_chip.dart';
 import '../../../../core/widgets/feedback/app_confirm_dialog.dart';
 import '../../../../core/widgets/feedback/app_error_view.dart';
@@ -14,6 +13,7 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/song.dart';
 import '../providers/song_providers.dart';
 import '../widgets/song_key_badge.dart';
+import '../widgets/song_lines_view.dart';
 
 /// Shows a song's full lyrics + chords, along with its original/altered key.
 class SongDetailPage extends ConsumerWidget {
@@ -123,10 +123,7 @@ class _SongContent extends StatelessWidget {
           const SizedBox(height: AppSizes.lg),
           const Divider(),
           const SizedBox(height: AppSizes.md),
-          SelectableText(
-            song.lyrics.isEmpty ? 'Sem letra/cifra cadastrada.' : song.lyrics,
-            style: AppTextStyles.chordSheet(context),
-          ),
+          SongLinesView(lines: song.lines),
           const SizedBox(height: AppSizes.xxl),
         ],
       ),

@@ -11,9 +11,11 @@ import '../../../../core/widgets/feedback/app_loading_indicator.dart';
 import '../../../../core/widgets/inputs/app_text_field.dart';
 import '../../../../core/widgets/layout/app_drawer.dart';
 import '../../domain/entities/song.dart';
+import '../../domain/lyrics_parser.dart';
 import '../providers/song_providers.dart';
 import '../widgets/authors_input.dart';
 import '../widgets/lyrics_field.dart';
+import '../widgets/lyrics_preview.dart';
 import '../widgets/musical_key_dropdown.dart';
 
 /// Create/edit form for a song. `songId == null` means "create new".
@@ -71,7 +73,9 @@ class _SongFormBody extends ConsumerStatefulWidget {
 class _SongFormBodyState extends ConsumerState<_SongFormBody> {
   final _formKey = GlobalKey<FormState>();
   late final _titleController = TextEditingController(text: widget.song?.title ?? '');
-  late final _lyricsController = TextEditingController(text: widget.song?.lyrics ?? '');
+  late final _lyricsController = TextEditingController(
+    text: widget.song == null ? '' : LyricsParser.toRawText(widget.song!.lines),
+  );
   late List<String> _authors = List.of(widget.song?.authors ?? const []);
   late String? _originalKey = widget.song?.originalKey;
   late String? _currentKey = widget.song?.currentKey;
@@ -99,7 +103,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
       authors: _authors,
       originalKey: _originalKey!,
       currentKey: _currentKey,
-      lyrics: _lyricsController.text,
+      lines: LyricsParser.parse(_lyricsController.text),
     );
 
     final saved = await ref
@@ -169,6 +173,8 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
               controller: _lyricsController,
               validator: (value) => Validators.required(value, field: 'A letra'),
             ),
+            const SizedBox(height: AppSizes.lg),
+            LyricsPreview(controller: _lyricsController),
             const SizedBox(height: AppSizes.xl),
             AppPrimaryButton(
               label: widget.song == null ? 'Cadastrar música' : 'Salvar alterações',

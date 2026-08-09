@@ -1,4 +1,5 @@
 import '../../domain/entities/song.dart';
+import 'song_line_model.dart';
 
 /// Maps between the `songs` Supabase table rows and the [Song] domain
 /// entity. Keeping this conversion in one place means the rest of the app
@@ -11,7 +12,7 @@ abstract final class SongModel {
       authors: List<String>.from(json['authors'] as List? ?? const []),
       originalKey: json['original_key'] as String,
       currentKey: json['current_key'] as String?,
-      lyrics: json['lyrics'] as String? ?? '',
+      lines: SongLineModel.listFromJson(json['lyrics']),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -23,7 +24,7 @@ abstract final class SongModel {
       'authors': input.authors,
       'original_key': input.originalKey,
       'current_key': input.currentKey,
-      'lyrics': input.lyrics,
+      'lyrics': SongLineModel.listToJson(input.lines),
     };
   }
 }

@@ -5,7 +5,10 @@ import '../../../../core/theme/app_text_styles.dart';
 /// Large multiline text field for the song's lyrics + chords ("cifra").
 ///
 /// Uses a monospaced font so chords typed above lyric lines stay aligned,
-/// which is how cifras are conventionally written as plain text.
+/// which is how cifras are conventionally written as plain text. Each line
+/// is tagged by `LyricsParser` based on simple markers: `> ` for a section
+/// title, `|| ... ||` for chords, `_"..."_` for lyrics — anything else is
+/// kept as a free-form "extra" line.
 class LyricsField extends StatelessWidget {
   const LyricsField({
     super.key,
@@ -26,7 +29,9 @@ class LyricsField extends StatelessWidget {
       style: AppTextStyles.chordSheet(context),
       decoration: const InputDecoration(
         labelText: 'Letra e cifra',
-        hintText: 'Cole ou digite a letra com os acordes acima das linhas...',
+        hintText: '> Refrão\n|| C  Am  F  G ||\n_"Eu sei que tu és bom"_',
+        helperText: '"> " = seção · "|| ... ||" = cifra · \'_"..."_\' = letra · resto = texto extra',
+        helperMaxLines: 2,
         alignLabelWithHint: true,
       ),
     );
