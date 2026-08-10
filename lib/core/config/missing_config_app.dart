@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Shown instead of the real app when `.env` doesn't have Supabase
-/// credentials yet, so `flutter run` gives a clear next step instead of a
-/// crash. See `.env.example` and `supabase/schema.sql`.
+/// Shown instead of the real app when the `SUPABASE_URL`/`SUPABASE_ANON_KEY`
+/// compile-time defines weren't provided, so `flutter run`/`flutter build`
+/// gives a clear next step instead of a crash. See `.env.json.example` and
+/// `supabase/schema.sql`.
 class MissingConfigApp extends StatelessWidget {
   const MissingConfigApp({super.key});
 
@@ -33,10 +34,10 @@ class MissingConfigApp extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      '1. Copie .env.example para .env\n'
+                      '1. Copie .env.json.example para .env.json\n'
                       '2. Preencha SUPABASE_URL e SUPABASE_ANON_KEY com os dados do seu projeto\n'
                       '3. Rode o script supabase/schema.sql no SQL editor do Supabase\n'
-                      '4. Reinicie o app',
+                      '4. Rode com: flutter run -d chrome --dart-define-from-file=.env.json',
                       textAlign: TextAlign.center,
                     ),
                   ],

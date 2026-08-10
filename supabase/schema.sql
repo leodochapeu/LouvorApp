@@ -3,8 +3,8 @@
 -- How to use:
 --   1. Create a project at https://supabase.com
 --   2. Open the SQL editor and run this whole file once
---   3. Copy the Project URL and anon public key into your local `.env`
---      (see .env.example)
+--   3. Copy the Project URL and anon public key into your local `.env.json`
+--      (see .env.json.example) — passed to Flutter via --dart-define-from-file
 --   4. Create user accounts manually under Authentication -> Users.
 --      There is no public sign-up flow: only people you add there can log
 --      in and edit songs. Everyone else can still read the public list.

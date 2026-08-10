@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,16 +8,6 @@ import 'core/config/missing_config_app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // `.env` isn't committed (see .gitignore) — `.env.example` documents the
-  // expected keys. Missing the file entirely is tolerated so a fresh clone
-  // can still boot into the "not configured" screen below.
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (_) {
-    // No .env yet — Env.isSupabaseConfigured will be false and we show
-    // MissingConfigApp instead of crashing.
-  }
 
   if (!Env.isSupabaseConfigured) {
     runApp(const MissingConfigApp());

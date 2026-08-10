@@ -1,20 +1,19 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 /// Central place to read environment configuration.
 ///
-/// Values come from the `.env` file (see `.env.example`), loaded once in
-/// `main.dart` via `flutter_dotenv` before the app starts.
+/// Values are compiled in at build time via `--dart-define` (or
+/// `--dart-define-from-file=.env.json` for local dev — see
+/// `.env.json.example`), **not** loaded from a bundled asset. A file-based
+/// asset would need to exist inside the CI/deploy environment (Vercel,
+/// Firebase Hosting, ...) at build time, but `.env*` files are gitignored on
+/// purpose since they hold secrets — that combination breaks `flutter build
+/// web` there. Compile-time defines have no such requirement: if they're not
+/// provided, they simply default to an empty string below.
 abstract final class Env {
-  static String get supabaseUrl => dotenv.env['SUPABASE_URL']?.trim() ?? '';
+  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 
-  static String get supabaseAnonKey =>
-      dotenv.env['SUPABASE_ANON_KEY']?.trim() ?? '';
+  static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   /// Whether the required Supabase credentials were provided.
-  ///
-  /// Kept intentionally simple so the app can boot into a friendly
-  /// "not configured yet" screen instead of crashing when someone runs the
-  /// project before creating their own Supabase instance.
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 }
