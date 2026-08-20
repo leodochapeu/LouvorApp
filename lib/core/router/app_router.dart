@@ -81,7 +81,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         // Declared before `/songs/:id` so "new" is never matched as an id.
         path: AppRoutes.songNew,
-        builder: (context, state) => const SongFormPage(),
+        builder: (context, state) {
+          final extra = state.extra;
+          return SongFormPage(
+            args: extra is SongFormArgs ? extra : null,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.songDetail,

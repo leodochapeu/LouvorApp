@@ -54,6 +54,33 @@ void main() {
     });
   });
 
+  group('UrlUtils.youtubeVideoId', () {
+    test('extracts a video id from common youtube url shapes', () {
+      expect(
+        UrlUtils.youtubeVideoId('https://youtu.be/nBBYAA7GWyw?si=tracking'),
+        'nBBYAA7GWyw',
+      );
+      expect(
+        UrlUtils.youtubeVideoId('https://www.youtube.com/watch?v=wXLL6vo8Pxs'),
+        'wXLL6vo8Pxs',
+      );
+      expect(
+        UrlUtils.youtubeVideoId('https://youtube.com/embed/abc123'),
+        'abc123',
+      );
+      expect(
+        UrlUtils.youtubeVideoId('https://www.youtube.com/shorts/shortId'),
+        'shortId',
+      );
+    });
+
+    test('is null when the url is not a youtube video', () {
+      expect(UrlUtils.youtubeVideoId('https://open.spotify.com/track/abc'), isNull);
+      expect(UrlUtils.youtubeVideoId('https://youtube.com'), isNull);
+      expect(UrlUtils.youtubeVideoId(''), isNull);
+    });
+  });
+
   group('Validators.optionalUrl', () {
     test('allows empty', () {
       expect(Validators.optionalUrl(null), isNull);

@@ -22,6 +22,7 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.autofocus = false,
     this.enabled = true,
+    this.alignLabelWithHint = false,
   });
 
   final TextEditingController? controller;
@@ -39,6 +40,7 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final bool autofocus;
   final bool enabled;
+  final bool alignLabelWithHint;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +61,7 @@ class AppTextField extends StatelessWidget {
         hintText: hint,
         prefixIcon: prefixIcon == null ? null : Icon(prefixIcon),
         suffixIcon: suffixIcon,
+        alignLabelWithHint: alignLabelWithHint,
       ),
     );
   }

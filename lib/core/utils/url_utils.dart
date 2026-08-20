@@ -38,7 +38,39 @@ abstract final class UrlUtils {
   static bool isYouTube(String? raw) {
     final uri = tryParseHttp(raw);
     if (uri == null) return false;
+    return _isYouTubeHost(uri.host);
+  }
+
+  /// Video id shared by `youtu.be/ID`, `watch?v=ID`, `/embed/ID`, `/shorts/ID`
+  /// and `/live/ID`. Tracking params (`si`, `t`, …) are ignored so two
+  /// different URL shapes of the same video still match.
+  static String? youtubeVideoId(String? raw) {
+    final uri = tryParseHttp(raw);
+    if (uri == null || !_isYouTubeHost(uri.host)) return null;
+
     final host = uri.host.toLowerCase();
-    return _youtubeHosts.contains(host) || host.endsWith('.youtube.com');
+    if (host == 'youtu.be' || host == 'www.youtu.be') {
+      if (uri.pathSegments.isEmpty) return null;
+      final id = uri.pathSegments.first.trim();
+      return id.isEmpty ? null : id;
+    }
+
+    final fromQuery = uri.queryParameters['v']?.trim();
+    if (fromQuery != null && fromQuery.isNotEmpty) return fromQuery;
+
+    const prefixes = {'embed', 'shorts', 'live', 'v'};
+    if (uri.pathSegments.length >= 2 &&
+        prefixes.contains(uri.pathSegments.first.toLowerCase())) {
+      final id = uri.pathSegments[1].trim();
+      return id.isEmpty ? null : id;
+    }
+
+    return null;
+  }
+
+  static bool _isYouTubeHost(String host) {
+    final normalized = host.toLowerCase();
+    return _youtubeHosts.contains(normalized) ||
+        normalized.endsWith('.youtube.com');
   }
 }

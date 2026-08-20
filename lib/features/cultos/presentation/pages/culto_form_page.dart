@@ -11,9 +11,16 @@ import '../../../../core/widgets/feedback/app_error_view.dart';
 import '../../../../core/widgets/feedback/app_loading_indicator.dart';
 import '../../../../core/widgets/inputs/app_text_field.dart';
 import '../../../../core/widgets/layout/app_drawer.dart';
+import '../../../songs/domain/entities/song.dart';
+import '../../../songs/domain/song_catalog_lookup.dart';
+import '../../../songs/presentation/pages/song_form_page.dart';
+import '../../../songs/presentation/providers/song_providers.dart';
+import '../../domain/culto_template.dart';
 import '../../domain/entities/culto.dart';
 import '../providers/culto_providers.dart';
 import '../widgets/culto_song_picker.dart';
+import '../widgets/culto_template_paste.dart';
+import '../widgets/missing_template_songs_alert.dart';
 
 /// Create/edit form for a culto. `cultoId == null` means "create new".
 class CultoFormPage extends ConsumerWidget {
@@ -72,11 +79,89 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
   late final _titleController = TextEditingController(text: widget.culto?.title ?? '');
   late DateTime? _date = widget.culto?.date;
   late List<String> _songIds = List.of(widget.culto?.songIds ?? const []);
+  List<CultoTemplateSong> _templateSongs = const [];
+
+  bool get _isCreating => widget.culto == null;
 
   @override
   void dispose() {
     _titleController.dispose();
     super.dispose();
+  }
+
+  List<CultoTemplateSong> _missingSongs(List<Song> catalog) {
+    return [
+      for (final item in _templateSongs)
+        if (SongCatalogLookup.find(
+              catalog: catalog,
+              title: item.title,
+              authors: item.authors,
+              referenceUrl: item.referenceUrl,
+            ) ==
+            null)
+          item,
+    ];
+  }
+
+  void _syncSongIds(List<Song> catalog) {
+    final matched = <String>[];
+    for (final item in _templateSongs) {
+      final song = SongCatalogLookup.find(
+        catalog: catalog,
+        title: item.title,
+        authors: item.authors,
+        referenceUrl: item.referenceUrl,
+      );
+      if (song != null && !matched.contains(song.id)) {
+        matched.add(song.id);
+      }
+    }
+    final extras = _songIds.where((id) => !matched.contains(id));
+    _songIds = [...matched, ...extras];
+  }
+
+  void _applyTemplate(CultoTemplate template) {
+    final catalog = ref.read(songsStreamProvider).value ?? const [];
+    setState(() {
+      if (template.title != null && template.title!.trim().isNotEmpty) {
+        _titleController.text = template.title!;
+      }
+      if (template.date != null) {
+        _date = template.date;
+      }
+      _templateSongs = template.songs;
+      _syncSongIds(catalog);
+    });
+
+    final missing = _missingSongs(catalog);
+    final matchedCount = template.songs.length - missing.length;
+    final message = missing.isEmpty
+        ? 'Culto preenchido com ${template.songs.length} '
+            '${template.songs.length == 1 ? 'música' : 'músicas'}.'
+        : '$matchedCount de ${template.songs.length} músicas já estão cadastradas. '
+            'Cadastre as que faltam antes de criar o culto.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _registerMissingSong(CultoTemplateSong item) async {
+    final saved = await context.push<Song>(
+      AppRoutes.songNew,
+      extra: SongFormArgs(
+        popOnSave: true,
+        prefill: SongFormPrefill(
+          title: item.title,
+          authors: item.authors,
+          referenceUrl: item.referenceUrl,
+        ),
+      ),
+    );
+    if (!mounted) return;
+
+    final catalog = [
+      ...?ref.read(songsStreamProvider).value,
+      if (saved != null) saved,
+    ];
+    setState(() => _syncSongIds(catalog));
   }
 
   Future<void> _pickDate() async {
@@ -101,6 +186,21 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
     if (_date == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selecione a data do culto.')),
+      );
+      return;
+    }
+
+    final catalog = ref.read(songsStreamProvider).value ?? const [];
+    final missing = _missingSongs(catalog);
+    if (missing.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            missing.length == 1
+                ? 'Cadastre a música que falta antes de criar o culto.'
+                : 'Cadastre as ${missing.length} músicas que faltam antes de criar o culto.',
+          ),
+        ),
       );
       return;
     }
@@ -137,7 +237,18 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
   @override
   Widget build(BuildContext context) {
     final isSaving = ref.watch(cultoMutationControllerProvider).isLoading;
+    final songsAsync = ref.watch(songsStreamProvider);
+    final catalog = songsAsync.value ?? const <Song>[];
+    final missing = songsAsync.hasValue ? _missingSongs(catalog) : const <CultoTemplateSong>[];
+    final hasUnresolvedTemplate =
+        _templateSongs.isNotEmpty && (!songsAsync.hasValue || missing.isNotEmpty);
     final theme = Theme.of(context);
+
+    ref.listen(songsStreamProvider, (previous, next) {
+      final songs = next.value;
+      if (songs == null || _templateSongs.isEmpty) return;
+      setState(() => _syncSongIds(songs));
+    });
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.md),
@@ -146,6 +257,10 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (_isCreating) ...[
+              CultoTemplatePaste(onParsed: _applyTemplate),
+              const SizedBox(height: AppSizes.xl),
+            ],
             AppTextField(
               controller: _titleController,
               label: 'Nome do culto',
@@ -155,6 +270,7 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
             ),
             const SizedBox(height: AppSizes.lg),
             FormField<DateTime>(
+              key: ValueKey(_date),
               initialValue: _date,
               validator: (value) => value == null ? 'Selecione a data' : null,
               builder: (state) {
@@ -184,6 +300,13 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
                 );
               },
             ),
+            if (missing.isNotEmpty) ...[
+              const SizedBox(height: AppSizes.xl),
+              MissingTemplateSongsAlert(
+                songs: missing,
+                onRegister: _registerMissingSong,
+              ),
+            ],
             const SizedBox(height: AppSizes.xl),
             CultoSongPicker(
               songIds: _songIds,
@@ -194,8 +317,17 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
               label: widget.culto == null ? 'Cadastrar culto' : 'Salvar alterações',
               icon: Icons.save_outlined,
               isLoading: isSaving,
-              onPressed: _submit,
+              onPressed: hasUnresolvedTemplate ? null : _submit,
             ),
+            if (hasUnresolvedTemplate) ...[
+              const SizedBox(height: AppSizes.sm),
+              Text(
+                'Cadastre as músicas que faltam para habilitar o cadastro do culto.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
             const SizedBox(height: AppSizes.xxl),
           ],
         ),
