@@ -1,4 +1,5 @@
 import '../../domain/entities/song.dart';
+import '../../domain/song_slug.dart';
 import 'song_line_model.dart';
 
 /// Maps between the `songs` Supabase table rows and the [Song] domain
@@ -6,14 +7,19 @@ import 'song_line_model.dart';
 /// never deals with raw JSON/column names.
 abstract final class SongModel {
   static Song fromJson(Map<String, dynamic> json) {
+    final title = json['title'] as String;
+    final authors = List<String>.from(json['authors'] as List? ?? const []);
     return Song(
       id: json['id'] as String,
-      title: json['title'] as String,
-      authors: List<String>.from(json['authors'] as List? ?? const []),
+      title: title,
+      authors: authors,
       originalKey: json['original_key'] as String,
       currentKey: json['current_key'] as String?,
       lines: SongLineModel.listFromJson(json['lyrics']),
       referenceUrl: json['reference_url'] as String?,
+      slug: (json['slug'] as String?)?.trim().isNotEmpty == true
+          ? json['slug'] as String
+          : SongSlug.from(title: title, authors: authors),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -27,6 +33,7 @@ abstract final class SongModel {
       'current_key': input.currentKey,
       'lyrics': SongLineModel.listToJson(input.lines),
       'reference_url': input.referenceUrl,
+      'slug': input.slug,
     };
   }
 }

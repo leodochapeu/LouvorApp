@@ -9,6 +9,8 @@ abstract class SongRepository {
 
   Future<Song> getById(String id);
 
+  Future<Song?> findBySlug(String slug);
+
   Future<Song> create(SongInput input);
 
   Future<Song> update(String id, SongInput input);

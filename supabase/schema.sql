@@ -28,19 +28,24 @@ create table if not exists public.songs (
   lyrics       jsonb not null default '[]'::jsonb,
   -- Optional source link (YouTube, Spotify, church site, ...).
   reference_url text,
+  -- Unique kebab-case identifier derived from title + authors.
+  slug         text,
   created_by   uuid references auth.users (id) on delete set null default auth.uid(),
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
 
--- Existing installs created before this column existed.
+-- Existing installs created before these columns existed.
 alter table public.songs add column if not exists reference_url text;
+alter table public.songs add column if not exists slug text;
 
-comment on table public.songs is 'Worship songs: title, authors, key(s), lyrics/chords and optional reference link.';
+comment on table public.songs is 'Worship songs: title, authors, key(s), lyrics/chords, optional reference link and unique slug.';
 comment on column public.songs.lyrics is
   'Array of {type, content} objects, one per line: type is sessao|letra|cifra|extras.';
 comment on column public.songs.reference_url is
   'Optional reference link for the song (YouTube, etc.).';
+comment on column public.songs.slug is
+  'Unique kebab-case identifier from title + authors. Prevents duplicate songs.';
 
 -- Migrate an existing `lyrics text` column (from an older run of this
 -- script) to jsonb, preserving old content as a single "extras" line
@@ -67,11 +72,97 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- Slug: kebab-case identifier from title + authors (unique)
+-- ---------------------------------------------------------------------
+create or replace function public.kebab_slug(input text)
+returns text
+language sql
+immutable
+as $$
+  select coalesce(
+    nullif(
+      trim(both '-' from
+        regexp_replace(
+          regexp_replace(
+            translate(
+              lower(coalesce(input, '')),
+              'áàâãäéèêëíìîïóòôõöúùûüýÿçñ',
+              'aaaaaeeeeiiiiooooouuuuyycn'
+            ),
+            '[^a-z0-9]+', '-', 'g'
+          ),
+          '-{2,}', '-', 'g'
+        )
+      ),
+      ''
+    ),
+    'musica'
+  );
+$$;
+
+create or replace function public.song_slug(p_title text, p_authors text[])
+returns text
+language sql
+immutable
+as $$
+  select public.kebab_slug(
+    concat_ws(
+      ' ',
+      nullif(trim(coalesce(p_title, '')), ''),
+      (
+        select string_agg(trimmed, ' ' order by lower(trimmed))
+        from (
+          select trim(a) as trimmed
+          from unnest(coalesce(p_authors, '{}'::text[])) as a
+        ) authors
+        where trimmed <> ''
+      )
+    )
+  );
+$$;
+
+create or replace function public.songs_set_slug()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.slug := public.song_slug(new.title, new.authors);
+  return new;
+end;
+$$;
+
+drop trigger if exists songs_set_slug on public.songs;
+create trigger songs_set_slug
+  before insert or update of title, authors
+  on public.songs
+  for each row
+  execute function public.songs_set_slug();
+
+-- Backfill existing rows, then make slug required and unique.
+update public.songs
+set slug = public.song_slug(title, authors)
+where slug is null or btrim(slug) = '';
+
+with ranked as (
+  select id, slug,
+    row_number() over (partition by slug order by created_at, id) as rn
+  from public.songs
+  where slug is not null
+)
+update public.songs s
+set slug = s.slug || '-' || left(replace(s.id::text, '-', ''), 8)
+from ranked r
+where s.id = r.id and r.rn > 1;
+
+alter table public.songs alter column slug set not null;
+
+-- ---------------------------------------------------------------------
 -- Indexes
 -- ---------------------------------------------------------------------
 create index if not exists songs_title_lower_idx on public.songs (lower(title));
 create index if not exists songs_authors_gin_idx on public.songs using gin (authors);
 create index if not exists songs_lyrics_gin_idx on public.songs using gin (lyrics);
+create unique index if not exists songs_slug_uidx on public.songs (slug);
 
 -- ---------------------------------------------------------------------
 -- Keep updated_at fresh on every UPDATE

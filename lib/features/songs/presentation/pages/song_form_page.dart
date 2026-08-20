@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,8 +12,10 @@ import '../../../../core/widgets/feedback/app_error_view.dart';
 import '../../../../core/widgets/feedback/app_loading_indicator.dart';
 import '../../../../core/widgets/inputs/app_text_field.dart';
 import '../../../../core/widgets/layout/app_drawer.dart';
+import '../../domain/duplicate_song_exception.dart';
 import '../../domain/entities/song.dart';
 import '../../domain/lyrics_parser.dart';
+import '../../domain/song_slug.dart';
 import '../providers/song_providers.dart';
 import '../widgets/authors_input.dart';
 import '../widgets/lyrics_field.dart';
@@ -85,6 +88,12 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
   late String? _currentKey = widget.song?.currentKey;
 
   @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _referenceUrlController.dispose();
@@ -112,6 +121,16 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
       referenceUrl: UrlUtils.normalize(_referenceUrlController.text),
     );
 
+    final duplicate = ref.read(songsStreamProvider).value?.firstWhereOrNull(
+          (song) => song.slug == input.slug && song.id != widget.song?.id,
+        );
+    if (duplicate != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Já existe uma música cadastrada com este nome e autor(es).')),
+      );
+      return;
+    }
+
     final saved = await ref
         .read(songMutationControllerProvider.notifier)
         .save(id: widget.song?.id, input: input);
@@ -122,8 +141,11 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
       context.go(AppRoutes.songDetailPath(saved.id));
     } else {
       final error = ref.read(songMutationControllerProvider).error;
+      final message = error is DuplicateSongException
+          ? error.toString()
+          : 'Não foi possível salvar a música.\n$error';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Não foi possível salvar a música.\n$error')),
+        SnackBar(content: Text(message)),
       );
     }
   }
@@ -131,6 +153,11 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
   @override
   Widget build(BuildContext context) {
     final isSaving = ref.watch(songMutationControllerProvider).isLoading;
+    final slug = SongSlug.from(title: _titleController.text, authors: _authors);
+    final duplicate = ref.watch(songsStreamProvider).value?.firstWhereOrNull(
+          (song) => song.slug == slug && song.id != widget.song?.id,
+        );
+    final isDuplicate = duplicate != null;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.md),
@@ -150,6 +177,9 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
               authors: _authors,
               onChanged: (authors) => setState(() => _authors = authors),
             ),
+            const SizedBox(height: AppSizes.sm),
+            if (_titleController.text.trim().isNotEmpty)
+              _SlugStatus(slug: slug, isDuplicate: isDuplicate),
             const SizedBox(height: AppSizes.lg),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,12 +226,42 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
               label: widget.song == null ? 'Cadastrar música' : 'Salvar alterações',
               icon: Icons.save_outlined,
               isLoading: isSaving,
-              onPressed: _submit,
+              onPressed: isDuplicate ? null : _submit,
             ),
             const SizedBox(height: AppSizes.xxl),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SlugStatus extends StatelessWidget {
+  const _SlugStatus({required this.slug, required this.isDuplicate});
+
+  final String slug;
+  final bool isDuplicate;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = isDuplicate ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Identificador: $slug',
+          style: theme.textTheme.bodySmall?.copyWith(color: color),
+        ),
+        if (isDuplicate) ...[
+          const SizedBox(height: AppSizes.xs),
+          Text(
+            'Já existe uma música cadastrada com este nome e autor(es).',
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+          ),
+        ],
+      ],
     );
   }
 }

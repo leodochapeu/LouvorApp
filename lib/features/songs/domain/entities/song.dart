@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../song_slug.dart';
 import 'song_line.dart';
 
 /// A worship song: title, authors, its original key, an optional key it's
@@ -14,6 +15,7 @@ class Song extends Equatable {
     this.currentKey,
     required this.lines,
     this.referenceUrl,
+    required this.slug,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -35,6 +37,9 @@ class Song extends Equatable {
 
   /// Optional source link (YouTube, Spotify, church site, ...).
   final String? referenceUrl;
+
+  /// Stable kebab-case identifier derived from title + authors. Unique.
+  final String slug;
 
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -64,6 +69,7 @@ class Song extends Equatable {
     List<SongLine>? lines,
     String? referenceUrl,
     bool clearReferenceUrl = false,
+    String? slug,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -76,6 +82,7 @@ class Song extends Equatable {
       lines: lines ?? this.lines,
       referenceUrl:
           clearReferenceUrl ? null : (referenceUrl ?? this.referenceUrl),
+      slug: slug ?? this.slug,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -90,6 +97,7 @@ class Song extends Equatable {
         currentKey,
         lines,
         referenceUrl,
+        slug,
         createdAt,
         updatedAt,
       ];
@@ -113,6 +121,8 @@ class SongInput extends Equatable {
   final String? currentKey;
   final List<SongLine> lines;
   final String? referenceUrl;
+
+  String get slug => SongSlug.from(title: title, authors: authors);
 
   @override
   List<Object?> get props =>
