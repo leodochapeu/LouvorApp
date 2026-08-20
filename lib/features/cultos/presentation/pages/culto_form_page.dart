@@ -152,6 +152,7 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
           title: item.title,
           authors: item.authors,
           referenceUrl: item.referenceUrl,
+          currentKey: item.musicalKey,
         ),
       ),
     );

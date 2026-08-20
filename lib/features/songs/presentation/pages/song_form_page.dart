@@ -34,11 +34,17 @@ class SongFormArgs {
 }
 
 class SongFormPrefill {
-  const SongFormPrefill({this.title, this.authors, this.referenceUrl});
+  const SongFormPrefill({
+    this.title,
+    this.authors,
+    this.referenceUrl,
+    this.currentKey,
+  });
 
   final String? title;
   final List<String>? authors;
   final String? referenceUrl;
+  final String? currentKey;
 }
 
 /// Create/edit form for a song. `songId == null` means "create new".
@@ -111,7 +117,8 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
     widget.song?.authors ?? widget.args?.prefill?.authors ?? const [],
   );
   late String? _originalKey = widget.song?.originalKey;
-  late String? _currentKey = widget.song?.currentKey;
+  late String? _currentKey =
+      widget.song?.currentKey ?? widget.args?.prefill?.currentKey;
 
   @override
   void initState() {

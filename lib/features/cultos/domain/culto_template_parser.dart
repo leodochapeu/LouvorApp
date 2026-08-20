@@ -15,9 +15,7 @@ abstract final class CultoTemplateParser {
   static final _numberedSong = RegExp(r'^(\d+)\s*[.)\-–—]\s+(.+)$');
   static final _dateInParens = RegExp(r'\((\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\)');
   static final _dateLoose = RegExp(r'\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b');
-  static final _keySuffix = RegExp(
-    r'\s*\(([A-Ga-g][#b♯♭]?m?)\)\s*$',
-  );
+  static final _parenthetical = RegExp(r'[\(\（]\s*([^\)\）]+)\s*[\)\）]');
   static final _urlToken = RegExp(
     r'(https?://[^\s<>]+|(?:www\.)?(?:youtube\.com|youtu\.be)/[^\s<>]+)',
     caseSensitive: false,
@@ -28,11 +26,13 @@ abstract final class CultoTemplateParser {
     r'^m[uú]sicas\s+para\s+(o\s+)?',
     caseSensitive: false,
   );
-  static final _zeroWidth = RegExp(r'[\u200B-\u200D\uFEFF]');
+  static final _invisible = RegExp(
+    r'[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF\u00AD]',
+  );
 
   static CultoTemplate parse(String raw, {DateTime? now}) {
     final clock = now ?? DateTime.now();
-    final cleaned = raw.replaceAll(_zeroWidth, '').replaceAll('\u00A0', ' ');
+    final cleaned = raw.replaceAll(_invisible, '').replaceAll('\u00A0', ' ');
     final lines = cleaned.split(RegExp(r'\r?\n'));
 
     final songStarts = <int>[];
@@ -128,12 +128,9 @@ abstract final class CultoTemplateParser {
       }
     }
 
-    String? musicalKey;
-    final keyMatch = _keySuffix.firstMatch(rest);
-    if (keyMatch != null) {
-      musicalKey = _canonicalKey(keyMatch.group(1)!);
-      rest = rest.substring(0, keyMatch.start).trim();
-    }
+    final stripped = _stripTrailingKey(rest);
+    rest = stripped.text;
+    var musicalKey = stripped.key;
 
     var title = rest;
     final authors = <String>[];
@@ -143,14 +140,19 @@ abstract final class CultoTemplateParser {
       title = rest.substring(0, last.start).trim();
       final authorRaw = rest.substring(last.end).trim();
       if (authorRaw.isNotEmpty) {
-        authors.addAll(
-          authorRaw
-              .split(',')
-              .map((author) => author.trim())
-              .where((author) => author.isNotEmpty),
-        );
+        for (final rawAuthor in authorRaw.split(',')) {
+          final authorWithKey = _stripTrailingKey(rawAuthor.trim());
+          musicalKey ??= authorWithKey.key;
+          if (authorWithKey.text.isNotEmpty) {
+            authors.add(authorWithKey.text);
+          }
+        }
       }
     }
+
+    final titleWithKey = _stripTrailingKey(title);
+    title = titleWithKey.text;
+    musicalKey ??= titleWithKey.key;
 
     if (title.isEmpty) return null;
 
@@ -160,6 +162,24 @@ abstract final class CultoTemplateParser {
       musicalKey: musicalKey,
       referenceUrl: referenceUrl,
     );
+  }
+
+  /// Pulls a trailing `(B)` / `（Am）` off [input] so it never stays in the
+  /// title or author. Only known musical keys are removed (`(Ao vivo)` stays).
+  static ({String text, String? key}) _stripTrailingKey(String input) {
+    var text = input.trim();
+    if (text.isEmpty) return (text: text, key: null);
+
+    final matches = _parenthetical.allMatches(text).toList();
+    for (final match in matches.reversed) {
+      final key = _canonicalKey(match.group(1)!);
+      if (key == null) continue;
+      final after = text.substring(match.end).trim();
+      if (after.isNotEmpty && RegExp(r'[\wÀ-ÿ]').hasMatch(after)) continue;
+      text = text.substring(0, match.start).trim();
+      return (text: text, key: key);
+    }
+    return (text: text, key: null);
   }
 
   static String? _normalizeUrl(String raw) {
@@ -175,6 +195,6 @@ abstract final class CultoTemplateParser {
     for (final key in MusicalKeys.all) {
       if (key.toLowerCase() == normalized.toLowerCase()) return key;
     }
-    return normalized;
+    return null;
   }
 }

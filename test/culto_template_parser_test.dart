@@ -110,6 +110,26 @@ https://www.youtube.com/watch?v=wXLL6vo8Pxs
       expect(result.songs.single.musicalKey, 'G');
     });
 
+    test('never keeps the musical key inside the author name', () {
+      final result = CultoTemplateParser.parse(
+        '1. Tudo vai bem - Gabriel Rodrigues (B)\nhttps://youtu.be/abc',
+        now: now,
+      );
+
+      expect(result.songs.single.authors, ['Gabriel Rodrigues']);
+      expect(result.songs.single.musicalKey, 'B');
+    });
+
+    test('strips a key glued to the author even with odd parentheses', () {
+      final result = CultoTemplateParser.parse(
+        '1. Tudo vai bem - Gabriel Rodrigues（B）\nhttps://youtu.be/abc',
+        now: now,
+      );
+
+      expect(result.songs.single.authors, ['Gabriel Rodrigues']);
+      expect(result.songs.single.musicalKey, 'B');
+    });
+
     test('returns an empty template when nothing matches', () {
       final result = CultoTemplateParser.parse('só um recado no grupo', now: now);
 
