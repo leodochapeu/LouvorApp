@@ -35,10 +35,17 @@ class Song extends Equatable {
   final DateTime updatedAt;
 
   /// The key that should be shown/used when playing the song: the altered
-  /// key if one was set, otherwise the original.
-  String get effectiveKey => currentKey ?? originalKey;
+  /// key if one was set and non-empty, otherwise the original.
+  String get effectiveKey {
+    final altered = currentKey?.trim();
+    if (altered != null && altered.isNotEmpty) return altered;
+    return originalKey;
+  }
 
   bool get hasAlteredKey => currentKey != null && currentKey != originalKey;
+
+  /// True when there is a key to project scale degrees onto chord names.
+  bool get hasPlayableKey => effectiveKey.trim().isNotEmpty;
 
   String get authorsLabel => authors.isEmpty ? 'Autor desconhecido' : authors.join(', ');
 

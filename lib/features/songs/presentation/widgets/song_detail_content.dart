@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/widgets/chips/app_chip.dart';
+import '../../domain/degree_to_chord.dart';
 import '../../domain/entities/song.dart';
+import '../providers/song_providers.dart';
+import 'chord_display_mode_button.dart';
 import 'song_key_badge.dart';
 import 'song_lines_view.dart';
 
 /// Full song body used on the song detail page and when a culto is shown
 /// in "letra" mode (every song stacked, as if each detail page were open).
-class SongDetailContent extends StatelessWidget {
+class SongDetailContent extends ConsumerWidget {
   const SongDetailContent({super.key, required this.song, this.lyricsFontSize});
 
   final Song song;
@@ -17,13 +21,19 @@ class SongDetailContent extends StatelessWidget {
   final double? lyricsFontSize;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final titleStyle = lyricsFontSize == null
         ? theme.textTheme.headlineSmall
         : theme.textTheme.headlineSmall?.copyWith(
             fontSize: (lyricsFontSize! * 1.4).clamp(18, 34),
           );
+
+    final showAsChords = song.hasPlayableKey &&
+        ref.watch(chordDisplayModeProvider) == ChordDisplayMode.names;
+    final lines = showAsChords
+        ? DegreeToChord.convertLines(song.lines, song.effectiveKey)
+        : song.lines;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,19 +49,27 @@ class SongDetailContent extends StatelessWidget {
                 .toList(),
           ),
         const SizedBox(height: AppSizes.md),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SongKeyBadge(label: 'Tom original', musicalKey: song.originalKey),
-            if (song.hasAlteredKey)
-              SongKeyBadge(label: 'Tom alterado', musicalKey: song.currentKey),
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  SongKeyBadge(label: 'Tom original', musicalKey: song.originalKey),
+                  if (song.hasAlteredKey)
+                    SongKeyBadge(label: 'Tom alterado', musicalKey: song.currentKey),
+                ],
+              ),
+            ),
+            if (song.hasPlayableKey) const ChordDisplayModeButton(),
           ],
         ),
         const SizedBox(height: AppSizes.lg),
         const Divider(),
         const SizedBox(height: AppSizes.md),
-        SongLinesView(lines: song.lines, fontSize: lyricsFontSize),
+        SongLinesView(lines: lines, fontSize: lyricsFontSize),
       ],
     );
   }

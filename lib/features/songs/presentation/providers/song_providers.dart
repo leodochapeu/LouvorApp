@@ -16,6 +16,14 @@ final songsStreamProvider = StreamProvider<List<Song>>((ref) {
   return ref.watch(songRepositoryProvider).watchSongs();
 });
 
+/// How chord lines are shown on song/culto detail: stored scale degrees,
+/// or projected onto note names from the song's key.
+enum ChordDisplayMode { degrees, names }
+
+final chordDisplayModeProvider = StateProvider<ChordDisplayMode>(
+  (ref) => ChordDisplayMode.degrees,
+);
+
 /// Current text typed into the search field on the songs list page.
 final songSearchQueryProvider = StateProvider<String>((ref) => '');
 
