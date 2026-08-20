@@ -1,3 +1,5 @@
+import 'url_utils.dart';
+
 /// Small collection of reusable form validators.
 ///
 /// Each function follows the `FormFieldValidator<String>` signature so it
@@ -17,6 +19,14 @@ abstract final class Validators {
     final regex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!regex.hasMatch(value.trim())) {
       return 'E-mail inválido';
+    }
+    return null;
+  }
+
+  static String? optionalUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    if (UrlUtils.tryParseHttp(value) == null) {
+      return 'Informe um link válido (http ou https)';
     }
     return null;
   }

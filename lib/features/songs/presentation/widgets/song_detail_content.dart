@@ -9,6 +9,7 @@ import '../providers/song_providers.dart';
 import 'chord_display_mode_button.dart';
 import 'song_key_badge.dart';
 import 'song_lines_view.dart';
+import 'song_reference_link_button.dart';
 
 /// Full song body used on the song detail page and when a culto is shown
 /// in "letra" mode (every song stacked, as if each detail page were open).
@@ -35,10 +36,22 @@ class SongDetailContent extends ConsumerWidget {
         ? DegreeToChord.convertLines(song.lines, song.effectiveKey)
         : song.lines;
 
+    final referenceUrl = song.referenceUrl?.trim();
+    final hasReferenceLink = referenceUrl != null && referenceUrl.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(song.title, style: titleStyle),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: Text(song.title, style: titleStyle)),
+            if (hasReferenceLink) ...[
+              const SizedBox(width: AppSizes.sm),
+              SongReferenceLinkButton(url: referenceUrl),
+            ],
+          ],
+        ),
         const SizedBox(height: AppSizes.sm),
         if (song.authors.isNotEmpty)
           Wrap(

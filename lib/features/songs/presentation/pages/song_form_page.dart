@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/utils/url_utils.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/buttons/app_primary_button.dart';
 import '../../../../core/widgets/feedback/app_error_view.dart';
@@ -73,6 +74,9 @@ class _SongFormBody extends ConsumerStatefulWidget {
 class _SongFormBodyState extends ConsumerState<_SongFormBody> {
   final _formKey = GlobalKey<FormState>();
   late final _titleController = TextEditingController(text: widget.song?.title ?? '');
+  late final _referenceUrlController = TextEditingController(
+    text: widget.song?.referenceUrl ?? '',
+  );
   late final _lyricsController = TextEditingController(
     text: widget.song == null ? '' : LyricsParser.toRawText(widget.song!.lines),
   );
@@ -83,6 +87,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
   @override
   void dispose() {
     _titleController.dispose();
+    _referenceUrlController.dispose();
     _lyricsController.dispose();
     super.dispose();
   }
@@ -104,6 +109,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
       originalKey: _originalKey!,
       currentKey: _currentKey,
       lines: LyricsParser.parse(_lyricsController.text),
+      referenceUrl: UrlUtils.normalize(_referenceUrlController.text),
     );
 
     final saved = await ref
@@ -167,6 +173,16 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: AppSizes.lg),
+            AppTextField(
+              controller: _referenceUrlController,
+              label: 'Link de referência',
+              hint: 'https://youtube.com/watch?v=...',
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.next,
+              prefixIcon: Icons.link,
+              validator: Validators.optionalUrl,
             ),
             const SizedBox(height: AppSizes.lg),
             LyricsField(

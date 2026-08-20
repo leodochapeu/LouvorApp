@@ -5,8 +5,13 @@ import 'entities/song_line.dart';
 ///
 /// Major example in C: `1 6 4 1/3` → `C Am F C/E`.
 ///
-/// Bass notes after `/` never receive a minor (`m`) suffix — `1/3` is `C/E`,
-/// not `C/Em`. Any non-digit character (`/`, `m`, `~`, …) is left untouched.
+/// Suffixes right after a degree are modifiers and are consumed:
+/// - `b` / `#` shift the pitch a semitone (`7b` in D: C# → C)
+/// - `M` / `m` force major or minor (`3M` in D: F#m → F#)
+///
+/// Combined: `7bM` in D is C (flattened and forced major). Other characters
+/// (`/`, `~`, parentheses, …) are left untouched. Bass notes after `/` do not
+/// receive a harmonic-field `m` — `1/3` is `C/E`, not `C/Em`.
 abstract final class DegreeToChord {
   /// Converts every [SongLineType.cifra] line; other line types are kept as-is.
   static List<SongLine> convertLines(List<SongLine> lines, String key) {
@@ -35,27 +40,17 @@ abstract final class DegreeToChord {
     var i = 0;
 
     while (i < content.length) {
-      final accidental = _accidentalAt(content, i);
-      final digitIndex = accidental == 0 ? i : i + 1;
-
-      if (digitIndex < content.length && _isDegree(content[digitIndex])) {
-        final degree = int.parse(content[digitIndex]);
-        final asBass = _isBassPosition(content, i);
-        var chord = field.chord(
-          degree,
-          accidental: accidental,
-          asBass: asBass,
+      final token = _readToken(content, i);
+      if (token != null) {
+        buffer.write(
+          field.chord(
+            token.degree,
+            accidental: token.accidental,
+            asBass: _isBassPosition(content, token.start),
+            quality: token.quality,
+          ),
         );
-
-        final afterDigit = digitIndex + 1;
-        final alreadyMinor = afterDigit < content.length &&
-            content[afterDigit].toLowerCase() == 'm';
-        if (alreadyMinor && chord.endsWith('m')) {
-          chord = chord.substring(0, chord.length - 1);
-        }
-
-        buffer.write(chord);
-        i = afterDigit;
+        i = token.end;
         continue;
       }
 
@@ -66,9 +61,51 @@ abstract final class DegreeToChord {
     return buffer.toString();
   }
 
-  /// Flat/sharp immediately before a degree digit, e.g. `b7` or `#4`.
-  static int _accidentalAt(String source, int index) {
-    if (index + 1 >= source.length || !_isDegree(source[index + 1])) return 0;
+  /// Reads a degree plus its optional accidental and quality suffixes.
+  ///
+  /// Accepts `b7` / `#4` (accidental before) and `7bM` / `3M` (after). An
+  /// accidental after the digit wins when both are present.
+  static _DegreeToken? _readToken(String source, int index) {
+    var i = index;
+    var accidental = 0;
+
+    final leading = _accidentalValue(source, i);
+    if (leading != 0 && i + 1 < source.length && _isDegree(source[i + 1])) {
+      accidental = leading;
+      i++;
+    }
+
+    if (i >= source.length || !_isDegree(source[i])) return null;
+
+    final degree = int.parse(source[i]);
+    i++;
+
+    final trailing = _accidentalValue(source, i);
+    if (trailing != 0) {
+      accidental = trailing;
+      i++;
+    }
+
+    final quality = i < source.length
+        ? switch (source[i]) {
+            'M' => _ChordQuality.major,
+            'm' => _ChordQuality.minor,
+            _ => null,
+          }
+        : null;
+    if (quality != null) i++;
+
+    return _DegreeToken(
+      degree: degree,
+      accidental: accidental,
+      quality: quality,
+      start: index,
+      end: i,
+    );
+  }
+
+  static int _accidentalValue(String source, int index) {
+    if (index >= source.length) return 0;
     return switch (source[index]) {
       'b' || '♭' => -1,
       '#' || '♯' => 1,
@@ -88,6 +125,24 @@ abstract final class DegreeToChord {
     }
     return i >= 0 && source[i] == '/';
   }
+}
+
+enum _ChordQuality { major, minor }
+
+class _DegreeToken {
+  const _DegreeToken({
+    required this.degree,
+    required this.accidental,
+    required this.quality,
+    required this.start,
+    required this.end,
+  });
+
+  final int degree;
+  final int accidental;
+  final _ChordQuality? quality;
+  final int start;
+  final int end;
 }
 
 /// Diatonic harmonic field of a major or minor key.
@@ -136,15 +191,26 @@ class _HarmonicField {
     return _HarmonicField._(notes, isMinor);
   }
 
-  String chord(int degree, {required int accidental, required bool asBass}) {
+  String chord(
+    int degree, {
+    required int accidental,
+    required bool asBass,
+    _ChordQuality? quality,
+  }) {
     final index = degree - 1;
     var note = _notes[index];
     if (accidental != 0) {
       final letter = _parseNote(note)!.letter;
       note = _formatNote(letter, (_pitchClass(note)! + accidental) % 12);
     }
-    if (asBass || !_isMinor[index]) return note;
-    return '${note}m';
+
+    final isMinor = switch (quality) {
+      _ChordQuality.major => false,
+      _ChordQuality.minor => true,
+      null => !asBass && _isMinor[index],
+    };
+
+    return isMinor ? '${note}m' : note;
   }
 
   static bool _isMinorKeyName(String key) {

@@ -3,7 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'song_line.dart';
 
 /// A worship song: title, authors, its original key, an optional key it's
-/// currently being played in, and the lyrics+chords ("cifra") content.
+/// currently being played in, the lyrics+chords ("cifra") content, and an
+/// optional reference link (YouTube, etc.).
 class Song extends Equatable {
   const Song({
     required this.id,
@@ -12,6 +13,7 @@ class Song extends Equatable {
     required this.originalKey,
     this.currentKey,
     required this.lines,
+    this.referenceUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -30,6 +32,9 @@ class Song extends Equatable {
   /// Lyrics + chords ("cifra"), as an ordered list of tagged lines — see
   /// [SongLine] and `LyricsParser` for how raw pasted text becomes this.
   final List<SongLine> lines;
+
+  /// Optional source link (YouTube, Spotify, church site, ...).
+  final String? referenceUrl;
 
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -57,6 +62,8 @@ class Song extends Equatable {
     String? currentKey,
     bool clearCurrentKey = false,
     List<SongLine>? lines,
+    String? referenceUrl,
+    bool clearReferenceUrl = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -67,6 +74,8 @@ class Song extends Equatable {
       originalKey: originalKey ?? this.originalKey,
       currentKey: clearCurrentKey ? null : (currentKey ?? this.currentKey),
       lines: lines ?? this.lines,
+      referenceUrl:
+          clearReferenceUrl ? null : (referenceUrl ?? this.referenceUrl),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -80,6 +89,7 @@ class Song extends Equatable {
         originalKey,
         currentKey,
         lines,
+        referenceUrl,
         createdAt,
         updatedAt,
       ];
@@ -94,6 +104,7 @@ class SongInput extends Equatable {
     required this.originalKey,
     this.currentKey,
     required this.lines,
+    this.referenceUrl,
   });
 
   final String title;
@@ -101,7 +112,9 @@ class SongInput extends Equatable {
   final String originalKey;
   final String? currentKey;
   final List<SongLine> lines;
+  final String? referenceUrl;
 
   @override
-  List<Object?> get props => [title, authors, originalKey, currentKey, lines];
+  List<Object?> get props =>
+      [title, authors, originalKey, currentKey, lines, referenceUrl];
 }

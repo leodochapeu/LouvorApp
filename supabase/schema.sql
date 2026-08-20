@@ -26,14 +26,21 @@ create table if not exists public.songs (
   -- one object per line. Built from plain text by LyricsParser (Dart) when a
   -- song is saved; see lib/features/songs/domain/lyrics_parser.dart.
   lyrics       jsonb not null default '[]'::jsonb,
+  -- Optional source link (YouTube, Spotify, church site, ...).
+  reference_url text,
   created_by   uuid references auth.users (id) on delete set null default auth.uid(),
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
 
-comment on table public.songs is 'Worship songs: title, authors, key(s) and lyrics/chords.';
+-- Existing installs created before this column existed.
+alter table public.songs add column if not exists reference_url text;
+
+comment on table public.songs is 'Worship songs: title, authors, key(s), lyrics/chords and optional reference link.';
 comment on column public.songs.lyrics is
   'Array of {type, content} objects, one per line: type is sessao|letra|cifra|extras.';
+comment on column public.songs.reference_url is
+  'Optional reference link for the song (YouTube, etc.).';
 
 -- Migrate an existing `lyrics text` column (from an older run of this
 -- script) to jsonb, preserving old content as a single "extras" line

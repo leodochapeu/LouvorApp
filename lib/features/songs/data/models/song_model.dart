@@ -13,6 +13,7 @@ abstract final class SongModel {
       originalKey: json['original_key'] as String,
       currentKey: json['current_key'] as String?,
       lines: SongLineModel.listFromJson(json['lyrics']),
+      referenceUrl: json['reference_url'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -25,6 +26,7 @@ abstract final class SongModel {
       'original_key': input.originalKey,
       'current_key': input.currentKey,
       'lyrics': SongLineModel.listToJson(input.lines),
+      'reference_url': input.referenceUrl,
     };
   }
 }
