@@ -22,6 +22,13 @@ final cultosStreamProvider = StreamProvider<List<Culto>>((ref) {
 /// Current text typed into the search field on the cultos list page.
 final cultoSearchQueryProvider = StateProvider<String>((ref) => '');
 
+/// How the culto detail page renders its setlist.
+enum CultoViewMode { cards, lyrics }
+
+final cultoViewModeProvider = StateProvider<CultoViewMode>(
+  (ref) => CultoViewMode.cards,
+);
+
 /// Font size for the culto "Letra" view. Shared across cultos in the session
 /// so bumping the type on one service carries over to the next.
 abstract final class CultoLyricsFontSize {

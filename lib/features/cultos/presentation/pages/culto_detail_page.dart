@@ -18,23 +18,20 @@ import '../../../songs/presentation/widgets/song_detail_content.dart';
 import '../../domain/entities/culto.dart';
 import '../providers/culto_providers.dart';
 
-enum CultoViewMode { cards, lyrics }
+/// Extra bottom inset so the last list item isn't hidden behind the options FAB.
+const _fabClearance = 88.0;
 
 /// Shows a culto's setlist. Cards mode matches the songs list; lyrics mode
 /// stacks every song's formatted detail content, one after another.
-class CultoDetailPage extends ConsumerStatefulWidget {
+///
+/// Date, view-mode and font-size controls live in a bottom sheet opened
+/// from a FAB, so the setlist can use the full screen.
+class CultoDetailPage extends ConsumerWidget {
   const CultoDetailPage({super.key, required this.cultoId});
 
   final String cultoId;
 
-  @override
-  ConsumerState<CultoDetailPage> createState() => _CultoDetailPageState();
-}
-
-class _CultoDetailPageState extends ConsumerState<CultoDetailPage> {
-  CultoViewMode _viewMode = CultoViewMode.cards;
-
-  Future<void> _delete(Culto culto) async {
+  Future<void> _delete(BuildContext context, WidgetRef ref, Culto culto) async {
     final confirmed = await AppConfirmDialog.show(
       context,
       title: 'Excluir culto',
@@ -46,7 +43,7 @@ class _CultoDetailPageState extends ConsumerState<CultoDetailPage> {
     if (!confirmed) return;
 
     final success = await ref.read(cultoMutationControllerProvider.notifier).delete(culto.id);
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     if (success) {
       context.go(AppRoutes.cultos);
@@ -57,11 +54,20 @@ class _CultoDetailPageState extends ConsumerState<CultoDetailPage> {
     }
   }
 
+  void _openOptions(BuildContext context, DateTime date) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => _CultoOptionsSheet(date: date),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
-    final cultoAsync = ref.watch(cultoByIdProvider(widget.cultoId));
-    final songsAsync = ref.watch(songsForCultoProvider(widget.cultoId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cultoAsync = ref.watch(cultoByIdProvider(cultoId));
+    final songsAsync = ref.watch(songsForCultoProvider(cultoId));
     final isLoggedIn = ref.watch(isLoggedInProvider);
+    final viewMode = ref.watch(cultoViewModeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -71,17 +77,24 @@ class _CultoDetailPageState extends ConsumerState<CultoDetailPage> {
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               tooltip: 'Editar',
-              onPressed: () => context.push(AppRoutes.cultoEditPath(widget.cultoId)),
+              onPressed: () => context.push(AppRoutes.cultoEditPath(cultoId)),
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
               tooltip: 'Excluir',
-              onPressed: () => _delete(cultoAsync.requireValue),
+              onPressed: () => _delete(context, ref, cultoAsync.requireValue),
             ),
           ],
         ],
       ),
       drawer: const AppDrawer(),
+      floatingActionButton: cultoAsync.hasValue
+          ? FloatingActionButton(
+              tooltip: 'Opções de visualização',
+              onPressed: () => _openOptions(context, cultoAsync.requireValue.date),
+              child: const Icon(Icons.tune),
+            )
+          : null,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -90,78 +103,80 @@ class _CultoDetailPageState extends ConsumerState<CultoDetailPage> {
               loading: () => const AppLoadingIndicator(),
               error: (error, _) => AppErrorView(
                 message: 'Não foi possível carregar o culto.\n$error',
-                onRetry: () => ref.invalidate(cultoByIdProvider(widget.cultoId)),
+                onRetry: () => ref.invalidate(cultoByIdProvider(cultoId)),
               ),
-              data: (culto) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSizes.md,
-                      AppSizes.md,
-                      AppSizes.md,
-                      AppSizes.sm,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          DateFormatters.long(culto.date),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: AppSizes.md),
-                        SizedBox(
-                          width: double.infinity,
-                          child: SegmentedButton<CultoViewMode>(
-                            segments: const [
-                              ButtonSegment(
-                                value: CultoViewMode.cards,
-                                icon: Icon(Icons.view_agenda_outlined),
-                                label: Text('Cards'),
-                              ),
-                              ButtonSegment(
-                                value: CultoViewMode.lyrics,
-                                icon: Icon(Icons.notes_outlined),
-                                label: Text('Letra'),
-                              ),
-                            ],
-                            selected: {_viewMode},
-                            onSelectionChanged: (selected) {
-                              setState(() => _viewMode = selected.first);
-                            },
-                          ),
-                        ),
-                        if (_viewMode == CultoViewMode.lyrics) ...[
-                          const SizedBox(height: AppSizes.sm),
-                          const _LyricsFontControls(),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: songsAsync.when(
-                      loading: () => const AppLoadingIndicator(),
-                      error: (error, _) => AppErrorView(
-                        message: 'Não foi possível carregar as músicas.\n$error',
-                        onRetry: () {
-                          ref.invalidate(cultoByIdProvider(widget.cultoId));
-                          ref.invalidate(songsForCultoProvider(widget.cultoId));
-                        },
+              data: (_) => songsAsync.when(
+                loading: () => const AppLoadingIndicator(),
+                error: (error, _) => AppErrorView(
+                  message: 'Não foi possível carregar as músicas.\n$error',
+                  onRetry: () {
+                    ref.invalidate(cultoByIdProvider(cultoId));
+                    ref.invalidate(songsForCultoProvider(cultoId));
+                  },
+                ),
+                data: (songs) => viewMode == CultoViewMode.cards
+                    ? _CardsView(songs: songs)
+                    : _LyricsView(
+                        songs: songs,
+                        fontSize: ref.watch(cultoLyricsFontSizeProvider),
                       ),
-                      data: (songs) => _viewMode == CultoViewMode.cards
-                          ? _CardsView(songs: songs)
-                          : _LyricsView(
-                              songs: songs,
-                              fontSize: ref.watch(cultoLyricsFontSizeProvider),
-                            ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CultoOptionsSheet extends ConsumerWidget {
+  const _CultoOptionsSheet({required this.date});
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final viewMode = ref.watch(cultoViewModeProvider);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(AppSizes.md, 0, AppSizes.md, AppSizes.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Data', style: theme.textTheme.labelMedium),
+            const SizedBox(height: AppSizes.xs),
+            Text(DateFormatters.long(date), style: theme.textTheme.titleMedium),
+            const SizedBox(height: AppSizes.lg),
+            Text('Visualização', style: theme.textTheme.labelMedium),
+            const SizedBox(height: AppSizes.sm),
+            SegmentedButton<CultoViewMode>(
+              segments: const [
+                ButtonSegment(
+                  value: CultoViewMode.cards,
+                  icon: Icon(Icons.view_agenda_outlined),
+                  label: Text('Cards'),
+                ),
+                ButtonSegment(
+                  value: CultoViewMode.lyrics,
+                  icon: Icon(Icons.notes_outlined),
+                  label: Text('Letra'),
+                ),
+              ],
+              selected: {viewMode},
+              onSelectionChanged: (selected) {
+                ref.read(cultoViewModeProvider.notifier).state = selected.first;
+              },
+            ),
+            if (viewMode == CultoViewMode.lyrics) ...[
+              const SizedBox(height: AppSizes.lg),
+              Text('Tamanho da letra', style: theme.textTheme.labelMedium),
+              const SizedBox(height: AppSizes.xs),
+              const _LyricsFontControls(),
+            ],
+          ],
         ),
       ),
     );
@@ -186,9 +201,9 @@ class _CardsView extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         AppSizes.md,
-        AppSizes.sm,
         AppSizes.md,
-        AppSizes.xxl,
+        AppSizes.md,
+        _fabClearance,
       ),
       itemCount: songs.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.sm),
@@ -231,7 +246,6 @@ class _LyricsFontControls extends ConsumerWidget {
     final canIncrease = fontSize < CultoLyricsFontSize.max;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
       children: [
         AppIconButton(
           icon: Icons.text_decrease,
@@ -245,6 +259,10 @@ class _LyricsFontControls extends ConsumerWidget {
                   );
                 }
               : null,
+        ),
+        Text(
+          '${fontSize.round()}',
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         AppIconButton(
           icon: Icons.text_increase,
@@ -283,9 +301,9 @@ class _LyricsView extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         AppSizes.md,
-        AppSizes.sm,
         AppSizes.md,
-        AppSizes.xxl,
+        AppSizes.md,
+        _fabClearance,
       ),
       itemCount: songs.length,
       separatorBuilder: (_, _) => const Padding(
