@@ -8,6 +8,14 @@ abstract final class AppRoutes {
   static const String songDetail = '/songs/:id';
   static const String songEdit = '/songs/:id/edit';
 
+  static const String cultos = '/cultos';
+  static const String cultoNew = '/cultos/new';
+  static const String cultoDetail = '/cultos/:id';
+  static const String cultoEdit = '/cultos/:id/edit';
+
   static String songDetailPath(String id) => '/songs/$id';
   static String songEditPath(String id) => '/songs/$id/edit';
+
+  static String cultoDetailPath(String id) => '/cultos/$id';
+  static String cultoEditPath(String id) => '/cultos/$id/edit';
 }

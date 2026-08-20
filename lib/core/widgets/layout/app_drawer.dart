@@ -58,6 +58,14 @@ class AppDrawer extends ConsumerWidget {
                 context.go(AppRoutes.songs);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.event_note_outlined),
+              title: const Text('Cultos'),
+              onTap: () {
+                Navigator.of(context).pop();
+                context.go(AppRoutes.cultos);
+              },
+            ),
             const Spacer(),
             const Divider(height: 1),
             if (isLoggedIn)
@@ -73,7 +81,7 @@ class AppDrawer extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.login),
                 title: const Text('Entrar'),
-                subtitle: const Text('Necessário para editar músicas'),
+                subtitle: const Text('Necessário para editar músicas e cultos'),
                 onTap: () {
                   Navigator.of(context).pop();
                   context.push(AppRoutes.login);

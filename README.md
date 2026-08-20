@@ -1,8 +1,8 @@
 # Louvor App
 
 Aplicativo de músicas de louvor: listagem pública com busca, cadastro de
-letra + cifra, tom original e tom alterado. Leitura é pública para qualquer
-pessoa com o link; edição exige login.
+letra + cifra, tom original e tom alterado, e cultos (setlist de um dia).
+Leitura é pública para qualquer pessoa com o link; edição exige login.
 
 ## Stack
 
@@ -56,7 +56,18 @@ lib/
         providers/             # lista, busca, detalhe, mutações (CRUD)
         pages/                  # SongsListPage, SongDetailPage, SongFormPage
         widgets/                # SongCard, AuthorsInput, MusicalKeyDropdown,
-                                 # SongLinesView, LyricsPreview...
+                                 # SongLinesView, LyricsPreview, SongDetailContent
+    cultos/
+      domain/
+        entities/             # Culto, CultoInput
+        repositories/         # CultoRepository (interface)
+      data/
+        models/                # CultoModel (JSON <-> entidade)
+        repositories/          # CultoRepositoryImpl (Supabase)
+      presentation/
+        providers/             # lista, busca, detalhe, setlist resolvida, CRUD
+        pages/                  # CultosListPage, CultoDetailPage, CultoFormPage
+        widgets/                # CultoCard, CultoSongPicker
 supabase/
   schema.sql                 # script único para criar tabela + RLS + realtime
 ```
@@ -93,10 +104,12 @@ então a pessoa continua editando o texto puro, não o JSON.
    [`supabase/schema.sql`](supabase/schema.sql). Isso cria:
    - a tabela `songs` (título, autores, tom original, tom alterado, e
      `lyrics` como `jsonb` — ver "Formato da letra/cifra" acima);
-   - índices para busca por título/autor/conteúdo;
+   - a tabela `cultos` (nome, data e `song_ids` — lista ordenada de músicas
+     do culto);
+   - índices para busca por título/autor/conteúdo/data;
    - Row Level Security: **leitura pública**, **escrita só autenticado**;
-   - a tabela habilitada no Realtime (a listagem atualiza sozinha quando
-     alguém edita/cadastra).
+   - as tabelas habilitadas no Realtime (as listagens atualizam sozinhas
+     quando alguém edita/cadastra).
 
    O script é seguro para rodar mais de uma vez: se a tabela já existir com a
    coluna `lyrics` antiga (`text`), ele migra automaticamente para `jsonb`,

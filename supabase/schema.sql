@@ -129,3 +129,68 @@ begin
     alter publication supabase_realtime add table public.songs;
   end if;
 end $$;
+
+-- ---------------------------------------------------------------------
+-- Cultos (worship services): a dated setlist of already-registered songs
+-- ---------------------------------------------------------------------
+create table if not exists public.cultos (
+  id           uuid primary key default gen_random_uuid(),
+  title        text not null,
+  service_date date not null,
+  -- Ordered list of song ids (songs.id). Order is the setlist order.
+  song_ids     uuid[] not null default '{}'::uuid[],
+  created_by   uuid references auth.users (id) on delete set null default auth.uid(),
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+comment on table public.cultos is 'Worship services (cultos): title, date and ordered song setlist.';
+comment on column public.cultos.song_ids is
+  'Ordered array of songs.id. The app resolves full songs from the songs table.';
+
+create index if not exists cultos_service_date_idx on public.cultos (service_date desc);
+create index if not exists cultos_title_lower_idx on public.cultos (lower(title));
+
+drop trigger if exists cultos_set_updated_at on public.cultos;
+create trigger cultos_set_updated_at
+  before update on public.cultos
+  for each row
+  execute function public.set_updated_at();
+
+-- Row Level Security: anyone can read, only authenticated users write.
+alter table public.cultos enable row level security;
+
+drop policy if exists "Cultos are publicly readable" on public.cultos;
+create policy "Cultos are publicly readable"
+  on public.cultos for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "Authenticated users can insert cultos" on public.cultos;
+create policy "Authenticated users can insert cultos"
+  on public.cultos for insert
+  to authenticated
+  with check (true);
+
+drop policy if exists "Authenticated users can update cultos" on public.cultos;
+create policy "Authenticated users can update cultos"
+  on public.cultos for update
+  to authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "Authenticated users can delete cultos" on public.cultos;
+create policy "Authenticated users can delete cultos"
+  on public.cultos for delete
+  to authenticated
+  using (true);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'cultos'
+  ) then
+    alter publication supabase_realtime add table public.cultos;
+  end if;
+end $$;

@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/cultos/presentation/pages/culto_detail_page.dart';
+import '../../features/cultos/presentation/pages/culto_form_page.dart';
+import '../../features/cultos/presentation/pages/cultos_list_page.dart';
 import '../../features/songs/presentation/pages/song_detail_page.dart';
 import '../../features/songs/presentation/pages/song_form_page.dart';
 import '../../features/songs/presentation/pages/songs_list_page.dart';
@@ -30,10 +33,12 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
-/// Paths that require an authenticated user (creating/editing a song).
-/// Reading songs and their lyrics/chords stays public.
+/// Paths that require an authenticated user (creating/editing a song or culto).
+/// Reading songs, cultos and their lyrics/chords stays public.
 bool _requiresAuth(String location) {
-  return location == AppRoutes.songNew || location.endsWith('/edit');
+  return location == AppRoutes.songNew ||
+      location == AppRoutes.cultoNew ||
+      location.endsWith('/edit');
 }
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -90,6 +95,31 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) {
               final id = state.pathParameters['id']!;
               return SongFormPage(songId: id);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.cultos,
+        builder: (context, state) => const CultosListPage(),
+      ),
+      GoRoute(
+        // Declared before `/cultos/:id` so "new" is never matched as an id.
+        path: AppRoutes.cultoNew,
+        builder: (context, state) => const CultoFormPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.cultoDetail,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return CultoDetailPage(cultoId: id);
+        },
+        routes: [
+          GoRoute(
+            path: 'edit',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return CultoFormPage(cultoId: id);
             },
           ),
         ],
