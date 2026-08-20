@@ -70,7 +70,11 @@ class SongDetailContent extends ConsumerWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  SongKeyBadge(label: 'Tom original', musicalKey: song.originalKey),
+                  SongKeyBadge(
+                    label: 'Tom original',
+                    musicalKey: song.originalKey,
+                    enabled: !song.hasAlteredKey,
+                  ),
                   if (song.hasAlteredKey)
                     SongKeyBadge(label: 'Tom alterado', musicalKey: song.currentKey),
                 ],
