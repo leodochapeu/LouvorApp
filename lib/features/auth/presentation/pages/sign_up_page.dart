@@ -3,21 +3,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/router/app_routes.dart';
-import '../widgets/login_form.dart';
+import '../widgets/sign_up_form.dart';
 
-/// Standalone login screen, reachable from the drawer. Sign-up is a
-/// separate hidden route ([AppRoutes.signUp]) and is not linked from here.
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+/// Hidden sign-up screen, reachable only by typing [AppRoutes.signUp].
+/// It is never linked from the drawer or the login page.
+class SignUpPage extends StatelessWidget {
+  const SignUpPage({super.key});
 
-  /// After a successful sign-in, go back to the page the user was
-  /// redirected from (if the router sent them here via a guarded route),
-  /// otherwise pop the drawer-opened login screen or fall back to home.
-  void _onLoginSuccess(BuildContext context) {
-    final redirect = GoRouterState.of(context).uri.queryParameters['redirect'];
-    if (redirect != null) {
-      context.go(redirect);
-    } else if (context.canPop()) {
+  void _onSignUpSuccess(BuildContext context) {
+    if (context.canPop()) {
       context.pop();
     } else {
       context.go(AppRoutes.songs);
@@ -27,7 +21,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Entrar')),
+      appBar: AppBar(title: const Text('Cadastro')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -39,25 +33,25 @@ class LoginPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Icon(
-                    Icons.music_note_rounded,
+                    Icons.person_add_alt_1_rounded,
                     size: 48,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(height: AppSizes.md),
                   Text(
-                    'Entre para editar as músicas',
+                    'Crie sua conta',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSizes.sm),
                   Text(
-                    'A listagem e as letras/cifras continuam públicas mesmo sem login.',
+                    'Depois do cadastro você poderá editar as músicas.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: AppSizes.xl),
-                  LoginForm(
-                    onSuccess: () => _onLoginSuccess(context),
+                  SignUpForm(
+                    onSuccess: () => _onSignUpSuccess(context),
                   ),
                 ],
               ),

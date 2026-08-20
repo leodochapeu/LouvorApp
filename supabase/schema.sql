@@ -5,9 +5,10 @@
 --   2. Open the SQL editor and run this whole file once
 --   3. Copy the Project URL and anon public key into your local `.env.json`
 --      (see .env.json.example) — passed to Flutter via --dart-define-from-file
---   4. Create user accounts manually under Authentication -> Users.
---      There is no public sign-up flow: only people you add there can log
---      in and edit songs. Everyone else can still read the public list.
+--   4. Keep "Allow new users to sign up" enabled under Authentication ->
+--      Providers -> Email. The app exposes sign-up only at the hidden
+--      /cadastro route (not linked from the UI). Everyone else can still
+--      read the public list without an account.
 --
 -- Safe to re-run: every statement uses IF NOT EXISTS / OR REPLACE / DROP
 -- POLICY IF EXISTS where applicable.

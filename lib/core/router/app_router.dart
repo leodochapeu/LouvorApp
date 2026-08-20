@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/songs/presentation/pages/song_detail_page.dart';
 import '../../features/songs/presentation/pages/song_form_page.dart';
@@ -52,7 +53,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ).toString();
       }
 
-      if (location == AppRoutes.login && isLoggedIn) {
+      if ((location == AppRoutes.login || location == AppRoutes.signUp) &&
+          isLoggedIn) {
         return state.uri.queryParameters['redirect'] ?? AppRoutes.songs;
       }
 
@@ -66,6 +68,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.signUp,
+        builder: (context, state) => const SignUpPage(),
       ),
       GoRoute(
         // Declared before `/songs/:id` so "new" is never matched as an id.

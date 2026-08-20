@@ -4,9 +4,8 @@ import '../domain/auth_repository.dart';
 
 /// [AuthRepository] backed by Supabase Auth.
 ///
-/// User accounts are created manually in the Supabase dashboard (see
-/// `supabase/schema.sql` header comment) — there is no public sign-up flow
-/// in this app, only sign in/out.
+/// Sign-up lives on a hidden route (`/cadastro`) that is never linked from
+/// the UI — see `supabase/schema.sql` for the expected Auth settings.
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this._client);
 
@@ -24,6 +23,14 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     await _client.auth.signInWithPassword(email: email, password: password);
+  }
+
+  @override
+  Future<void> signUp({
+    required String email,
+    required String password,
+  }) async {
+    await _client.auth.signUp(email: email, password: password);
   }
 
   @override

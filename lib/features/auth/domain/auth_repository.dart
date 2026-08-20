@@ -16,5 +16,13 @@ abstract class AuthRepository {
     required String password,
   });
 
+  /// Creates a new account. A session is only established immediately when
+  /// email confirmation is disabled in Supabase Auth; otherwise the user
+  /// must confirm before they can sign in.
+  Future<void> signUp({
+    required String email,
+    required String password,
+  });
+
   Future<void> signOut();
 }
