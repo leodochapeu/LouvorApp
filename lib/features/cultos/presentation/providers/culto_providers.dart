@@ -22,6 +22,19 @@ final cultosStreamProvider = StreamProvider<List<Culto>>((ref) {
 /// Current text typed into the search field on the cultos list page.
 final cultoSearchQueryProvider = StateProvider<String>((ref) => '');
 
+/// Font size for the culto "Letra" view. Shared across cultos in the session
+/// so bumping the type on one service carries over to the next.
+abstract final class CultoLyricsFontSize {
+  static const double min = 12;
+  static const double max = 28;
+  static const double step = 2;
+  static const double initial = 15;
+}
+
+final cultoLyricsFontSizeProvider = StateProvider<double>(
+  (ref) => CultoLyricsFontSize.initial,
+);
+
 /// [cultosStreamProvider] filtered by [cultoSearchQueryProvider], matching
 /// the title or the formatted date (case-insensitive).
 final filteredCultosProvider = Provider<AsyncValue<List<Culto>>>((ref) {

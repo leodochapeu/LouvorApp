@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/date_formatters.dart';
+import '../../../../core/widgets/buttons/app_icon_button.dart';
 import '../../../../core/widgets/feedback/app_confirm_dialog.dart';
 import '../../../../core/widgets/feedback/app_empty_state.dart';
 import '../../../../core/widgets/feedback/app_error_view.dart';
@@ -132,6 +133,10 @@ class _CultoDetailPageState extends ConsumerState<CultoDetailPage> {
                             },
                           ),
                         ),
+                        if (_viewMode == CultoViewMode.lyrics) ...[
+                          const SizedBox(height: AppSizes.sm),
+                          const _LyricsFontControls(),
+                        ],
                       ],
                     ),
                   ),
@@ -147,7 +152,10 @@ class _CultoDetailPageState extends ConsumerState<CultoDetailPage> {
                       ),
                       data: (songs) => _viewMode == CultoViewMode.cards
                           ? _CardsView(songs: songs)
-                          : _LyricsView(songs: songs),
+                          : _LyricsView(
+                              songs: songs,
+                              fontSize: ref.watch(cultoLyricsFontSizeProvider),
+                            ),
                     ),
                   ),
                 ],
@@ -213,10 +221,54 @@ class _CardsView extends StatelessWidget {
   }
 }
 
+class _LyricsFontControls extends ConsumerWidget {
+  const _LyricsFontControls();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fontSize = ref.watch(cultoLyricsFontSizeProvider);
+    final canDecrease = fontSize > CultoLyricsFontSize.min;
+    final canIncrease = fontSize < CultoLyricsFontSize.max;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        AppIconButton(
+          icon: Icons.text_decrease,
+          tooltip: 'Diminuir fonte',
+          onPressed: canDecrease
+              ? () {
+                  ref.read(cultoLyricsFontSizeProvider.notifier).state =
+                      (fontSize - CultoLyricsFontSize.step).clamp(
+                    CultoLyricsFontSize.min,
+                    CultoLyricsFontSize.max,
+                  );
+                }
+              : null,
+        ),
+        AppIconButton(
+          icon: Icons.text_increase,
+          tooltip: 'Aumentar fonte',
+          onPressed: canIncrease
+              ? () {
+                  ref.read(cultoLyricsFontSizeProvider.notifier).state =
+                      (fontSize + CultoLyricsFontSize.step).clamp(
+                    CultoLyricsFontSize.min,
+                    CultoLyricsFontSize.max,
+                  );
+                }
+              : null,
+        ),
+      ],
+    );
+  }
+}
+
 class _LyricsView extends StatelessWidget {
-  const _LyricsView({required this.songs});
+  const _LyricsView({required this.songs, required this.fontSize});
 
   final List<Song> songs;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +292,10 @@ class _LyricsView extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
         child: Divider(),
       ),
-      itemBuilder: (context, index) => SongDetailContent(song: songs[index]),
+      itemBuilder: (context, index) => SongDetailContent(
+        song: songs[index],
+        lyricsFontSize: fontSize,
+      ),
     );
   }
 }

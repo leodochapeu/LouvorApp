@@ -23,8 +23,11 @@ abstract final class AppTextStyles {
     );
   }
 
-  static TextStyle chordSheet(BuildContext context) => GoogleFonts.jetBrainsMono(
-        fontSize: 15,
+  static const double chordSheetSize = 15;
+
+  static TextStyle chordSheet(BuildContext context, {double? fontSize}) =>
+      GoogleFonts.jetBrainsMono(
+        fontSize: fontSize ?? chordSheetSize,
         height: 1.6,
         color: Theme.of(context).colorScheme.onSurface,
       );

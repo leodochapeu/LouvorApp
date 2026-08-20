@@ -9,18 +9,26 @@ import 'song_lines_view.dart';
 /// Full song body used on the song detail page and when a culto is shown
 /// in "letra" mode (every song stacked, as if each detail page were open).
 class SongDetailContent extends StatelessWidget {
-  const SongDetailContent({super.key, required this.song});
+  const SongDetailContent({super.key, required this.song, this.lyricsFontSize});
 
   final Song song;
+
+  /// When set, scales the lyrics/chords (and nudges the title to match).
+  final double? lyricsFontSize;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final titleStyle = lyricsFontSize == null
+        ? theme.textTheme.headlineSmall
+        : theme.textTheme.headlineSmall?.copyWith(
+            fontSize: (lyricsFontSize! * 1.4).clamp(18, 34),
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(song.title, style: theme.textTheme.headlineSmall),
+        Text(song.title, style: titleStyle),
         const SizedBox(height: AppSizes.sm),
         if (song.authors.isNotEmpty)
           Wrap(
@@ -43,7 +51,7 @@ class SongDetailContent extends StatelessWidget {
         const SizedBox(height: AppSizes.lg),
         const Divider(),
         const SizedBox(height: AppSizes.md),
-        SongLinesView(lines: song.lines),
+        SongLinesView(lines: song.lines, fontSize: lyricsFontSize),
       ],
     );
   }
