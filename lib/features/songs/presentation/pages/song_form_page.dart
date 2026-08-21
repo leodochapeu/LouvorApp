@@ -15,12 +15,14 @@ import '../../domain/duplicate_song_exception.dart';
 import '../../domain/entities/song.dart';
 import '../../domain/lyrics_parser.dart';
 import '../../domain/song_catalog_lookup.dart';
+import '../../domain/song_import.dart';
 import '../../domain/song_slug.dart';
 import '../providers/song_providers.dart';
 import '../widgets/authors_input.dart';
 import '../widgets/lyrics_field.dart';
 import '../widgets/lyrics_preview.dart';
 import '../widgets/musical_key_dropdown.dart';
+import '../widgets/song_import_paste.dart';
 
 /// Optional extras when opening "Nova música" from the culto template flow.
 class SongFormArgs {
@@ -119,6 +121,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
   late String? _originalKey = widget.song?.originalKey;
   late String? _currentKey =
       widget.song?.currentKey ?? widget.args?.prefill?.currentKey;
+  int _importTick = 0;
 
   @override
   void initState() {
@@ -154,6 +157,43 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
       authors: _authors,
       referenceUrl: referenceUrl ?? _referenceUrlController.text,
       excludingId: widget.song?.id,
+    );
+  }
+
+  void _applyImport(SongImport imported) {
+    setState(() {
+      if (imported.title.isNotEmpty) {
+        _titleController.text = imported.title;
+      }
+      if (imported.authors.isNotEmpty) {
+        _authors = List.of(imported.authors);
+      }
+      if (imported.originalKey != null) {
+        _originalKey = imported.originalKey;
+        _currentKey = imported.currentKey;
+      } else if (imported.currentKey != null) {
+        _currentKey = imported.currentKey;
+      }
+      if (imported.lines.isNotEmpty) {
+        _lyricsController.text = LyricsParser.toRawText(imported.lines);
+      }
+      _importTick++;
+    });
+
+    final filled = [
+      if (imported.title.isNotEmpty) 'nome',
+      if (imported.authors.isNotEmpty) 'autor',
+      if (imported.originalKey != null || imported.currentKey != null) 'tom',
+      if (imported.lines.isNotEmpty) 'letra',
+    ];
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          filled.isEmpty
+              ? 'JSON lido, mas nenhum campo foi preenchido.'
+              : 'Campos preenchidos: ${filled.join(', ')}.',
+        ),
+      ),
     );
   }
 
@@ -226,6 +266,10 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.song == null) ...[
+              SongImportPaste(onParsed: _applyImport),
+              const SizedBox(height: AppSizes.xl),
+            ],
             AppTextField(
               controller: _titleController,
               label: 'Nome da música',
@@ -250,6 +294,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
               children: [
                 Expanded(
                   child: MusicalKeyDropdown(
+                    key: ValueKey('original-$_originalKey-$_importTick'),
                     label: 'Tom original',
                     value: _originalKey,
                     onChanged: (value) => setState(() => _originalKey = value),
@@ -260,6 +305,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
                 const SizedBox(width: AppSizes.md),
                 Expanded(
                   child: MusicalKeyDropdown(
+                    key: ValueKey('current-$_currentKey-$_importTick'),
                     label: 'Tom alterado',
                     value: _currentKey,
                     allowEmpty: true,
