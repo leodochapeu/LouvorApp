@@ -39,6 +39,58 @@ void main() {
       final lines = LyricsParser.parse('   >   Ponte   ');
       expect(lines.single, const SongLine(type: SongLineType.sessao, content: 'Ponte'));
     });
+
+    test('keeps a chord line as cifra when a parenthetical follows ||', () {
+      final lines = LyricsParser.parse('|| 4 1 5 {3} || (³*)');
+
+      expect(
+        lines.single,
+        const SongLine(
+          type: SongLineType.cifra,
+          content: '4 1 5 {3}',
+          suffix: '(³*)',
+        ),
+      );
+    });
+
+    test('keeps bar-separated chords as cifra with a trailing repeat mark', () {
+      final lines = LyricsParser.parse('|| 4 1 4 1 | 4 1 4 1 || (²*)');
+
+      expect(
+        lines.single,
+        const SongLine(
+          type: SongLineType.cifra,
+          content: '4 1 4 1 | 4 1 4 1',
+          suffix: '(²*)',
+        ),
+      );
+    });
+
+    test('keeps lyrics as letra when a repeat mark follows the closing quote', () {
+      final lines = LyricsParser.parse('_\"No grande mover..\"_ ²*');
+
+      expect(
+        lines.single,
+        const SongLine(
+          type: SongLineType.letra,
+          content: 'No grande mover..',
+          suffix: '²*',
+        ),
+      );
+    });
+  });
+
+  group('LyricsParser.inlineRuns', () {
+    test('marks ~text~ as strikethrough and leaves the rest alone', () {
+      expect(LyricsParser.inlineRuns('~Espontâneo~'), const [
+        (text: 'Espontâneo', strikethrough: true),
+      ]);
+      expect(LyricsParser.inlineRuns('antes ~meio~ depois'), const [
+        (text: 'antes ', strikethrough: false),
+        (text: 'meio', strikethrough: true),
+        (text: ' depois', strikethrough: false),
+      ]);
+    });
   });
 
   group('LyricsParser.toRawText', () {
@@ -51,6 +103,13 @@ void main() {
       final roundTripped = LyricsParser.toRawText(LyricsParser.parse(raw));
 
       expect(roundTripped, raw);
+    });
+
+    test('round-trips trailing annotations on cifra and letra', () {
+      const raw = '|| 4 1 5 {3} || (³*)\n'
+          '_"No grande mover.."_ ²*';
+
+      expect(LyricsParser.toRawText(LyricsParser.parse(raw)), raw);
     });
   });
 }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/widgets/branding/app_logo.dart';
 import '../widgets/login_form.dart';
 
 /// Standalone login screen, reachable from the drawer. Sign-up is a
@@ -38,11 +39,7 @@ class LoginPage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.music_note_rounded,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                  const Center(child: AppLogo(size: 72)),
                   const SizedBox(height: AppSizes.md),
                   Text(
                     'Entre para editar as músicas',

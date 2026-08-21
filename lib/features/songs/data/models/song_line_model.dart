@@ -7,11 +7,16 @@ abstract final class SongLineModel {
     return SongLine(
       type: SongLineType.fromName(json['type'] as String? ?? 'extras'),
       content: json['content'] as String? ?? '',
+      suffix: json['suffix'] as String? ?? '',
     );
   }
 
   static Map<String, dynamic> toJson(SongLine line) {
-    return {'type': line.type.name, 'content': line.content};
+    return {
+      'type': line.type.name,
+      'content': line.content,
+      if (line.suffix.isNotEmpty) 'suffix': line.suffix,
+    };
   }
 
   static List<SongLine> listFromJson(dynamic raw) {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../features/auth/presentation/providers/auth_providers.dart';
 import '../../router/app_routes.dart';
+import '../branding/app_logo.dart';
 
 /// App-wide navigation drawer.
 ///
@@ -25,11 +26,7 @@ class AppDrawer extends ConsumerWidget {
             DrawerHeader(
               child: Row(
                 children: [
-                  Icon(
-                    Icons.library_music_rounded,
-                    size: 36,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                  const AppLogo(size: 48),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

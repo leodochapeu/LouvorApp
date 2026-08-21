@@ -29,11 +29,20 @@ enum SongLineType {
 /// JSON shape) instead of a single block of text, so the UI can render
 /// sections, lyrics, chords and free-form notes differently.
 class SongLine extends Equatable {
-  const SongLine({required this.type, required this.content});
+  const SongLine({
+    required this.type,
+    required this.content,
+    this.suffix = '',
+  });
 
   final SongLineType type;
   final String content;
 
+  /// Annotation that followed the line's markup, e.g. `(²*)` after
+  /// `|| 4 1 5 ||`. Kept out of [content] so degree→chord conversion does
+  /// not rewrite it.
+  final String suffix;
+
   @override
-  List<Object?> get props => [type, content];
+  List<Object?> get props => [type, content, suffix];
 }

@@ -21,7 +21,11 @@ abstract final class DegreeToChord {
     return [
       for (final line in lines)
         if (line.type == SongLineType.cifra)
-          SongLine(type: line.type, content: _convertContent(line.content, field))
+          SongLine(
+            type: line.type,
+            content: _convertContent(line.content, field),
+            suffix: line.suffix,
+          )
         else
           line,
     ];

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/song_line.dart';
+import '../../domain/lyrics_parser.dart';
 
 /// Renders a song's tagged lines with per-type styling:
 /// - [SongLineType.sessao]: bold, title-like, with extra spacing above.
 /// - [SongLineType.letra]: italic.
 /// - [SongLineType.cifra]: colored with the app's primary color.
 /// - [SongLineType.extras]: gray (muted).
+/// - Inline `~texto~` (any type): strikethrough.
 ///
 /// Blank lines are preserved as vertical spacing so the original structure
 /// of the pasted cifra is kept.
@@ -22,7 +24,8 @@ class SongLinesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (lines.isEmpty || lines.every((line) => line.content.isEmpty)) {
+    if (lines.isEmpty ||
+        lines.every((line) => line.content.isEmpty && line.suffix.isEmpty)) {
       return Text(
         'Sem letra/cifra cadastrada.',
         style: AppTextStyles.chordSheet(context, fontSize: fontSize),
@@ -48,7 +51,7 @@ class _SongLineText extends StatelessWidget {
   Widget build(BuildContext context) {
     final resolvedSize = fontSize ?? AppTextStyles.chordSheetSize;
 
-    if (line.content.isEmpty) {
+    if (line.content.isEmpty && line.suffix.isEmpty) {
       return SizedBox(height: resolvedSize * 0.8);
     }
 
@@ -68,12 +71,38 @@ class _SongLineText extends StatelessWidget {
         ),
       SongLineType.extras => base.copyWith(color: theme.colorScheme.onSurfaceVariant),
     };
+    final suffixStyle = base.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
     return Padding(
       padding: line.type == SongLineType.sessao
           ? const EdgeInsets.only(top: 12, bottom: 2)
           : EdgeInsets.zero,
-      child: SelectableText(line.content, style: style),
+      child: SelectableText.rich(
+        TextSpan(
+          children: [
+            ..._inlineSpans(line.content, style),
+            if (line.suffix.isNotEmpty) ...[
+              TextSpan(text: ' ', style: style),
+              ..._inlineSpans(line.suffix, suffixStyle),
+            ],
+          ],
+        ),
+      ),
     );
+  }
+
+  static List<InlineSpan> _inlineSpans(String text, TextStyle style) {
+    return [
+      for (final run in LyricsParser.inlineRuns(text))
+        TextSpan(
+          text: run.text,
+          style: run.strikethrough
+              ? style.copyWith(
+                  decoration: TextDecoration.lineThrough,
+                  decorationColor: style.color,
+                )
+              : style,
+        ),
+    ];
   }
 }

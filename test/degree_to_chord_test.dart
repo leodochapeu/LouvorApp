@@ -15,6 +15,8 @@ void main() {
     test('maps every degree of D major', () {
       expect(DegreeToChord.convert('1 2 3 4 5 6 7', 'D'), 'D Em F#m G A Bm C#m');
     });
+
+    test('maps G and F major slash chords', () {
       expect(DegreeToChord.convert('1 6 4 1/3', 'G'), 'G Em C G/B');
       expect(DegreeToChord.convert('1 6 4 1/3', 'F'), 'F Dm Bb F/A');
     });
@@ -84,6 +86,24 @@ void main() {
         SongLine(type: SongLineType.sessao, content: 'Refrão'),
         SongLine(type: SongLineType.cifra, content: 'C Am F G'),
         SongLine(type: SongLineType.letra, content: 'Grande é o Senhor'),
+      ]);
+    });
+
+    test('does not convert a parenthetical suffix after the chord markers', () {
+      const lines = [
+        SongLine(
+          type: SongLineType.cifra,
+          content: '4 1 5 {3}',
+          suffix: '(2*)',
+        ),
+      ];
+
+      expect(DegreeToChord.convertLines(lines, 'C'), const [
+        SongLine(
+          type: SongLineType.cifra,
+          content: 'F C G {Em}',
+          suffix: '(2*)',
+        ),
       ]);
     });
   });
