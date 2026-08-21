@@ -13,6 +13,8 @@ import 'entities/song_line.dart';
 ///
 /// Inline `~texto~` is kept in [SongLine.content] and rendered as strikethrough.
 /// A tilde glued to a degree (`8~`, `~4`) is a sustain mark, not strikethrough.
+/// Inline `_"texto"_` is italic, so a section like
+/// `> Medley: _"Pai querido.."_ (alteração nossa)` can mix title and lyric.
 abstract final class LyricsParser {
   static final RegExp _cifraPattern = RegExp(r'^\|\|(.*)\|\|(.*)$');
   static final RegExp _letraPattern = RegExp(r'^_"(.*)"_(.*)$');
@@ -71,17 +73,33 @@ abstract final class LyricsParser {
     };
   }
 
-  /// Splits [text] into runs, treating `~foo~` as strikethrough.
+  /// Splits [text] into runs, treating `_"foo"_` as italic and `~foo~` as
+  /// strikethrough.
   ///
   /// Tildes next to a digit (`8~`, `6~`) stay in the text: they mean the
   /// degree is held, not that a span should be struck through.
-  static List<({String text, bool strikethrough})> inlineRuns(String text) {
+  static List<LyricsInlineRun> inlineRuns(String text) {
     if (text.isEmpty) return const [];
 
-    final runs = <({String text, bool strikethrough})>[];
+    final runs = <LyricsInlineRun>[];
     var cursor = 0;
     var i = 0;
     while (i < text.length) {
+      if (_startsLetraMarkup(text, i)) {
+        final close = _findLetraClose(text, i + 2);
+        if (close > i + 2) {
+          if (i > cursor) {
+            runs.add(LyricsInlineRun(text.substring(cursor, i)));
+          }
+          runs.add(LyricsInlineRun(text.substring(i + 2, close), italic: true));
+          cursor = close + 2;
+          i = cursor;
+          continue;
+        }
+        i++;
+        continue;
+      }
+
       if (text[i] != '~' || _isSustainTilde(text, i)) {
         i++;
         continue;
@@ -100,16 +118,26 @@ abstract final class LyricsParser {
       }
 
       if (i > cursor) {
-        runs.add((text: text.substring(cursor, i), strikethrough: false));
+        runs.add(LyricsInlineRun(text.substring(cursor, i)));
       }
-      runs.add((text: text.substring(i + 1, close), strikethrough: true));
+      runs.add(LyricsInlineRun(text.substring(i + 1, close), strikethrough: true));
       cursor = close + 1;
       i = cursor;
     }
     if (cursor < text.length) {
-      runs.add((text: text.substring(cursor), strikethrough: false));
+      runs.add(LyricsInlineRun(text.substring(cursor)));
     }
     return runs;
+  }
+
+  static bool _startsLetraMarkup(String text, int index) =>
+      index + 1 < text.length && text[index] == '_' && text[index + 1] == '"';
+
+  static int _findLetraClose(String text, int from) {
+    for (var j = from; j + 1 < text.length; j++) {
+      if (text[j] == '"' && text[j + 1] == '_') return j;
+    }
+    return -1;
   }
 
   /// True when `text[index]` is a `~` sitting beside a degree number.
@@ -121,4 +149,27 @@ abstract final class LyricsParser {
 
   static bool _isDigit(String char) =>
       char.length == 1 && char.compareTo('0') >= 0 && char.compareTo('9') <= 0;
+}
+
+/// One styled span inside a song line, after inline markup is interpreted.
+class LyricsInlineRun {
+  const LyricsInlineRun(
+    this.text, {
+    this.strikethrough = false,
+    this.italic = false,
+  });
+
+  final String text;
+  final bool strikethrough;
+  final bool italic;
+
+  @override
+  bool operator ==(Object other) =>
+      other is LyricsInlineRun &&
+      text == other.text &&
+      strikethrough == other.strikethrough &&
+      italic == other.italic;
+
+  @override
+  int get hashCode => Object.hash(text, strikethrough, italic);
 }

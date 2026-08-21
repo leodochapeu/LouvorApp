@@ -78,31 +78,56 @@ void main() {
         ),
       );
     });
+
+    test('keeps a section line as sessao when it embeds lyric markup', () {
+      final lines = LyricsParser.parse(
+        '> Medley: _"Pai querido.."_ (alteração nossa)',
+      );
+
+      expect(
+        lines.single,
+        const SongLine(
+          type: SongLineType.sessao,
+          content: 'Medley: _"Pai querido.."_ (alteração nossa)',
+        ),
+      );
+    });
   });
 
   group('LyricsParser.inlineRuns', () {
     test('marks ~text~ as strikethrough and leaves the rest alone', () {
       expect(LyricsParser.inlineRuns('~Espontâneo~'), const [
-        (text: 'Espontâneo', strikethrough: true),
+        LyricsInlineRun('Espontâneo', strikethrough: true),
       ]);
       expect(LyricsParser.inlineRuns('antes ~meio~ depois'), const [
-        (text: 'antes ', strikethrough: false),
-        (text: 'meio', strikethrough: true),
-        (text: ' depois', strikethrough: false),
+        LyricsInlineRun('antes '),
+        LyricsInlineRun('meio', strikethrough: true),
+        LyricsInlineRun(' depois'),
       ]);
     });
 
     test('does not strike through sustain tildes next to a degree', () {
       expect(LyricsParser.inlineRuns('{3 5 6 8~ 9 6~ 5~}'), const [
-        (text: '{3 5 6 8~ 9 6~ 5~}', strikethrough: false),
+        LyricsInlineRun('{3 5 6 8~ 9 6~ 5~}'),
       ]);
     });
 
     test('still strikes ~text~ on a line that also has sustain tildes', () {
       expect(LyricsParser.inlineRuns('8~ 6~ ~Espontâneo~'), const [
-        (text: '8~ 6~ ', strikethrough: false),
-        (text: 'Espontâneo', strikethrough: true),
+        LyricsInlineRun('8~ 6~ '),
+        LyricsInlineRun('Espontâneo', strikethrough: true),
       ]);
+    });
+
+    test('marks _"text"_ as italic inside a section title', () {
+      expect(
+        LyricsParser.inlineRuns('Medley: _"Pai querido.."_ (alteração nossa)'),
+        const [
+          LyricsInlineRun('Medley: '),
+          LyricsInlineRun('Pai querido..', italic: true),
+          LyricsInlineRun(' (alteração nossa)'),
+        ],
+      );
     });
   });
 

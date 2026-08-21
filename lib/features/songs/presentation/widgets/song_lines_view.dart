@@ -9,6 +9,7 @@ import '../../domain/lyrics_parser.dart';
 /// - [SongLineType.letra]: italic.
 /// - [SongLineType.cifra]: colored with the app's primary color.
 /// - [SongLineType.extras]: gray (muted).
+/// - Inline `_"texto"_` (any type): italic.
 /// - Inline `~texto~` (any type): strikethrough.
 ///
 /// Blank lines are preserved as vertical spacing so the original structure
@@ -96,12 +97,14 @@ class _SongLineText extends StatelessWidget {
       for (final run in LyricsParser.inlineRuns(text))
         TextSpan(
           text: run.text,
-          style: run.strikethrough
-              ? style.copyWith(
-                  decoration: TextDecoration.lineThrough,
-                  decorationColor: style.color,
-                )
-              : style,
+          style: style.copyWith(
+            fontStyle: run.italic ? FontStyle.italic : style.fontStyle,
+            decoration: run.strikethrough
+                ? TextDecoration.lineThrough
+                : style.decoration,
+            decorationColor:
+                run.strikethrough ? style.color : style.decorationColor,
+          ),
         ),
     ];
   }
