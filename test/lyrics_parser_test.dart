@@ -91,6 +91,19 @@ void main() {
         (text: ' depois', strikethrough: false),
       ]);
     });
+
+    test('does not strike through sustain tildes next to a degree', () {
+      expect(LyricsParser.inlineRuns('{3 5 6 8~ 9 6~ 5~}'), const [
+        (text: '{3 5 6 8~ 9 6~ 5~}', strikethrough: false),
+      ]);
+    });
+
+    test('still strikes ~text~ on a line that also has sustain tildes', () {
+      expect(LyricsParser.inlineRuns('8~ 6~ ~Espontâneo~'), const [
+        (text: '8~ 6~ ', strikethrough: false),
+        (text: 'Espontâneo', strikethrough: true),
+      ]);
+    });
   });
 
   group('LyricsParser.toRawText', () {
