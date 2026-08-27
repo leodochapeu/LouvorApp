@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/data/supabase_table_watch.dart';
 import '../../domain/duplicate_song_exception.dart';
 import '../../domain/entities/song.dart';
 import '../../domain/repositories/song_repository.dart';
@@ -7,10 +8,12 @@ import '../models/song_model.dart';
 
 /// [SongRepository] backed by the `songs` table in Supabase.
 ///
-/// Reads use Supabase Realtime (`.stream`) so every connected client -
-/// logged in or not - sees edits live. Writes are only reachable from
-/// screens gated by the router's auth guard, but Row Level Security in
-/// `supabase/schema.sql` is what actually enforces that server-side.
+/// Reads start with a REST snapshot so the UI can render without waiting on
+/// the websocket, then follow Supabase Realtime (`.stream`) so every
+/// connected client — logged in or not — sees edits live. Writes are only
+/// reachable from screens gated by the router's auth guard, but Row Level
+/// Security in `supabase/schema.sql` is what actually enforces that
+/// server-side.
 class SongRepositoryImpl implements SongRepository {
   SongRepositoryImpl(this._client);
 
@@ -20,11 +23,23 @@ class SongRepositoryImpl implements SongRepository {
 
   @override
   Stream<List<Song>> watchSongs() {
-    return _client
-        .from(_table)
-        .stream(primaryKey: ['id'])
-        .order('title')
-        .map((rows) => rows.map(SongModel.fromJson).toList());
+    return watchSupabaseTable(
+      fetchAll: _fetchAll,
+      watchLive: () => _client
+          .from(_table)
+          .stream(primaryKey: ['id'])
+          .order('title')
+          .map(_mapRows),
+    );
+  }
+
+  Future<List<Song>> _fetchAll() async {
+    final rows = await _client.from(_table).select().order('title');
+    return _mapRows(rows);
+  }
+
+  List<Song> _mapRows(List<Map<String, dynamic>> rows) {
+    return [for (final row in rows) SongModel.fromJson(row)];
   }
 
   @override

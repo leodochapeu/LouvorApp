@@ -69,9 +69,12 @@ class SongFormPage extends ConsumerWidget {
     } else {
       final songAsync = ref.watch(songByIdProvider(songId!));
       body = songAsync.when(
+        skipError: true,
+        skipLoadingOnReload: true,
         loading: () => const AppLoadingIndicator(),
-        error: (error, _) => AppErrorView(
-          message: 'Não foi possível carregar a música.\n$error',
+        error: (error, _) => AppErrorView.fromWatch(
+          error: error,
+          message: 'Não foi possível carregar a música.',
           onRetry: () => ref.invalidate(songByIdProvider(songId!)),
         ),
         data: (song) => _SongFormBody(key: ValueKey(song.id), song: song, args: args),

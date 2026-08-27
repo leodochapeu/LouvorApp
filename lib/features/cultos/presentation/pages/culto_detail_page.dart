@@ -13,6 +13,7 @@ import '../../../../core/widgets/feedback/app_loading_indicator.dart';
 import '../../../../core/widgets/layout/app_drawer.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../songs/domain/entities/song.dart';
+import '../../../songs/presentation/providers/song_providers.dart';
 import '../../../songs/presentation/widgets/song_card.dart';
 import '../../../songs/presentation/widgets/song_detail_content.dart';
 import '../../domain/entities/culto.dart';
@@ -100,18 +101,27 @@ class CultoDetailPage extends ConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppSizes.maxContentWidth),
             child: cultoAsync.when(
+              skipError: true,
+              skipLoadingOnReload: true,
               loading: () => const AppLoadingIndicator(),
-              error: (error, _) => AppErrorView(
-                message: 'Não foi possível carregar o culto.\n$error',
+              error: (error, _) => AppErrorView.fromWatch(
+                error: error,
+                message: 'Não foi possível carregar o culto.',
                 onRetry: () => ref.invalidate(cultoByIdProvider(cultoId)),
               ),
               data: (_) => songsAsync.when(
-                loading: () => const AppLoadingIndicator(),
-                error: (error, _) => AppErrorView(
-                  message: 'Não foi possível carregar as músicas.\n$error',
+                skipError: true,
+                skipLoadingOnReload: true,
+                loading: () => const AppLoadingIndicator(
+                  message: 'Carregando músicas...',
+                ),
+                error: (error, _) => AppErrorView.fromWatch(
+                  error: error,
+                  message: 'Não foi possível carregar as músicas.',
                   onRetry: () {
                     ref.invalidate(cultoByIdProvider(cultoId));
                     ref.invalidate(songsForCultoProvider(cultoId));
+                    ref.invalidate(songsStreamProvider);
                   },
                 ),
                 data: (songs) => viewMode == CultoViewMode.cards

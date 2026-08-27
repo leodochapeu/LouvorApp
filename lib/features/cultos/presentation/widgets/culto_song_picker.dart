@@ -62,12 +62,15 @@ class _CultoSongPickerState extends ConsumerState<CultoSongPicker> {
     final theme = Theme.of(context);
 
     return songsAsync.when(
+      skipError: true,
+      skipLoadingOnReload: true,
       loading: () => const Padding(
         padding: EdgeInsets.symmetric(vertical: AppSizes.lg),
         child: AppLoadingIndicator(),
       ),
-      error: (error, _) => AppErrorView(
-        message: 'Não foi possível carregar as músicas.\n$error',
+      error: (error, _) => AppErrorView.fromWatch(
+        error: error,
+        message: 'Não foi possível carregar as músicas.',
         onRetry: () => ref.invalidate(songsStreamProvider),
       ),
       data: (allSongs) {

@@ -73,26 +73,30 @@ final cultoByIdProvider = FutureProvider.family<Culto, String>((ref, id) async {
 /// Resolves a culto's setlist into full [Song]s, in setlist order.
 ///
 /// Songs that were deleted after being added to the culto are skipped.
+/// Prefers already-loaded data so a later realtime timeout doesn't replace
+/// the setlist with an error screen.
 final songsForCultoProvider = Provider.family<AsyncValue<List<Song>>, String>((ref, cultoId) {
   final cultoAsync = ref.watch(cultoByIdProvider(cultoId));
   final songsAsync = ref.watch(songsStreamProvider);
 
-  if (cultoAsync.isLoading || songsAsync.isLoading) {
-    return const AsyncLoading();
+  final culto = cultoAsync.value;
+  final songs = songsAsync.value;
+  if (culto != null && songs != null) {
+    final byId = {for (final song in songs) song.id: song};
+    return AsyncData([
+      for (final id in culto.songIds)
+        if (byId[id] != null) byId[id]!,
+    ]);
   }
-  if (cultoAsync.hasError) {
+
+  if (cultoAsync.hasError && culto == null) {
     return AsyncError(cultoAsync.error!, cultoAsync.stackTrace ?? StackTrace.empty);
   }
-  if (songsAsync.hasError) {
+  if (songsAsync.hasError && songs == null) {
     return AsyncError(songsAsync.error!, songsAsync.stackTrace ?? StackTrace.empty);
   }
 
-  final culto = cultoAsync.requireValue;
-  final byId = {for (final song in songsAsync.requireValue) song.id: song};
-  return AsyncData([
-    for (final id in culto.songIds)
-      if (byId[id] != null) byId[id]!,
-  ]);
+  return const AsyncLoading();
 });
 
 /// Handles create/update/delete, exposing loading/error state for the form

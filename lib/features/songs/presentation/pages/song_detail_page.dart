@@ -70,9 +70,12 @@ class SongDetailPage extends ConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppSizes.maxContentWidth),
             child: songAsync.when(
+              skipError: true,
+              skipLoadingOnReload: true,
               loading: () => const AppLoadingIndicator(),
-              error: (error, _) => AppErrorView(
-                message: 'Não foi possível carregar a música.\n$error',
+              error: (error, _) => AppErrorView.fromWatch(
+                error: error,
+                message: 'Não foi possível carregar a música.',
                 onRetry: () => ref.invalidate(songByIdProvider(songId)),
               ),
               data: (song) => SingleChildScrollView(

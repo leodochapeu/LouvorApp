@@ -40,9 +40,12 @@ class CultoFormPage extends ConsumerWidget {
     } else {
       final cultoAsync = ref.watch(cultoByIdProvider(cultoId!));
       body = cultoAsync.when(
+        skipError: true,
+        skipLoadingOnReload: true,
         loading: () => const AppLoadingIndicator(),
-        error: (error, _) => AppErrorView(
-          message: 'Não foi possível carregar o culto.\n$error',
+        error: (error, _) => AppErrorView.fromWatch(
+          error: error,
+          message: 'Não foi possível carregar o culto.',
           onRetry: () => ref.invalidate(cultoByIdProvider(cultoId!)),
         ),
         data: (culto) => _CultoFormBody(key: ValueKey(culto.id), culto: culto),

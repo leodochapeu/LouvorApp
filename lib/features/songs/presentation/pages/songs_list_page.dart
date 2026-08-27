@@ -70,9 +70,12 @@ class _SongsListPageState extends ConsumerState<SongsListPage> {
                 ),
                 Expanded(
                   child: songsAsync.when(
+                    skipError: true,
+                    skipLoadingOnReload: true,
                     loading: () => const AppLoadingIndicator(),
-                    error: (error, _) => AppErrorView(
-                      message: 'Não foi possível carregar as músicas.\n$error',
+                    error: (error, _) => AppErrorView.fromWatch(
+                      error: error,
+                      message: 'Não foi possível carregar as músicas.',
                       onRetry: () => ref.invalidate(songsStreamProvider),
                     ),
                     data: (songs) {

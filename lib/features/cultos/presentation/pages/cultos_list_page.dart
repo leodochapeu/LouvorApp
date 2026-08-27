@@ -70,9 +70,12 @@ class _CultosListPageState extends ConsumerState<CultosListPage> {
                 ),
                 Expanded(
                   child: cultosAsync.when(
+                    skipError: true,
+                    skipLoadingOnReload: true,
                     loading: () => const AppLoadingIndicator(),
-                    error: (error, _) => AppErrorView(
-                      message: 'Não foi possível carregar os cultos.\n$error',
+                    error: (error, _) => AppErrorView.fromWatch(
+                      error: error,
+                      message: 'Não foi possível carregar os cultos.',
                       onRetry: () => ref.invalidate(cultosStreamProvider),
                     ),
                     data: (cultos) {

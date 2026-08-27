@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../data/supabase_table_watch.dart';
 import '../buttons/app_primary_button.dart';
+import 'app_loading_indicator.dart';
 
 /// Standard "something went wrong" state with an optional retry action.
 class AppErrorView extends StatelessWidget {
@@ -12,6 +14,22 @@ class AppErrorView extends StatelessWidget {
 
   final String message;
   final VoidCallback? onRetry;
+
+  /// Realtime subscribe timeouts are not real load failures — keep showing
+  /// the spinner until data arrives (or a genuine error does).
+  static Widget fromWatch({
+    required Object error,
+    required String message,
+    VoidCallback? onRetry,
+  }) {
+    if (isTransientRealtimeError(error)) {
+      return const AppLoadingIndicator();
+    }
+    return AppErrorView(
+      message: '$message\n$error',
+      onRetry: onRetry,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
