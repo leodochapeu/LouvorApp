@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Websocket subscribe failures that Supabase puts on `.stream()` while the
 /// socket is still connecting or reconnecting. Data usually arrives right
 /// after; treating them as fatal makes the UI flash an error screen.
-bool isTransientRealtimeError(Object error) {
+bool isTransientRealtimeError(Object? error) {
   if (error is! RealtimeSubscribeException) return false;
   return error.status == RealtimeSubscribeStatus.timedOut ||
       error.status == RealtimeSubscribeStatus.channelError;
@@ -22,6 +22,6 @@ Stream<List<T>> watchSupabaseTable<T>({
   yield await fetchAll();
   yield* watchLive().handleError(
     (Object _, StackTrace _) {},
-    test: isTransientRealtimeError,
+    test: (error) => isTransientRealtimeError(error),
   );
 }
