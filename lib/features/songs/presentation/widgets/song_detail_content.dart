@@ -65,7 +65,8 @@ class SongDetailContent extends ConsumerWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(child: SongKeyBadges(song: song)),
+            SongKeyBadges(song: song),
+            const Spacer(),
             if (song.hasPlayableKey) const ChordDisplayModeButton(),
           ],
         ),

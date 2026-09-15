@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/song.dart';
 
 /// Original + optional altered key badges. When the song is being played
@@ -39,6 +40,7 @@ class SongKeyBadges extends StatelessWidget {
         SongKeyBadge(
           label: 'Tom alterado',
           musicalKey: song.currentKey,
+          altered: true,
         ),
       ],
     );
@@ -52,6 +54,7 @@ class SongKeyBadge extends StatelessWidget {
     required this.label,
     this.musicalKey,
     this.enabled = true,
+    this.altered = false,
   });
 
   final String label;
@@ -61,17 +64,26 @@ class SongKeyBadge extends StatelessWidget {
   /// altered key is the one actually being played).
   final bool enabled;
 
+  /// Dusty rose instead of purple — marks the culto's play key.
+  final bool altered;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (musicalKey == null) return const SizedBox.shrink();
 
-    final background = enabled
-        ? theme.colorScheme.primaryContainer
-        : theme.colorScheme.surfaceContainerHighest;
-    final foreground = enabled
-        ? theme.colorScheme.onPrimaryContainer
-        : theme.colorScheme.onSurface.withValues(alpha: 0.38);
+    final Color background;
+    final Color foreground;
+    if (!enabled) {
+      background = theme.colorScheme.surfaceContainerHighest;
+      foreground = theme.colorScheme.onSurface.withValues(alpha: 0.38);
+    } else if (altered) {
+      background = AppColors.alteredKeyContainer(theme.brightness);
+      foreground = AppColors.onAlteredKeyContainer(theme.brightness);
+    } else {
+      background = theme.colorScheme.primaryContainer;
+      foreground = theme.colorScheme.onPrimaryContainer;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
