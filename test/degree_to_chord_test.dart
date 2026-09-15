@@ -16,6 +16,32 @@ void main() {
       expect(DegreeToChord.convert('1 2 3 4 5 6 7', 'D'), 'D Em F#m G A Bm C#m');
     });
 
+    test('uses readable enharmonics instead of F## / E# / G## in A#', () {
+      expect(
+        DegreeToChord.convert('6 5 4 | 6 5 4', 'A#'),
+        'Gm F D# | Gm F D#',
+      );
+      expect(
+        DegreeToChord.convert('1 2 3 4 5 6 7', 'A#'),
+        'A# Cm Dm D# F Gm Am',
+      );
+      expect(
+        DegreeToChord.convert('{ 6 5/7 1 | 2 1 5/7 }', 'A#'),
+        '{ Gm F/A A# | Cm A# F/A }',
+      );
+    });
+
+    test('uses readable enharmonics for E# and Cb in F# and Gb', () {
+      expect(
+        DegreeToChord.convert('1 2 3 4 5 6 7', 'F#'),
+        'F# G#m A#m B C# D#m Fm',
+      );
+      expect(
+        DegreeToChord.convert('1 2 3 4 5 6 7', 'Gb'),
+        'Gb Abm Bbm B Db Ebm Fm',
+      );
+    });
+
     test('maps G and F major slash chords', () {
       expect(DegreeToChord.convert('1 6 4 1/3', 'G'), 'G Em C G/B');
       expect(DegreeToChord.convert('1 6 4 1/3', 'F'), 'F Dm Bb F/A');

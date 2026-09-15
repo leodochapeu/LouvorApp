@@ -154,6 +154,9 @@ class _DegreeToken {
 /// Qualities follow the common worship-cifra convention (vii as minor, not
 /// diminished): C → C Dm Em F G Am Bm. A minor key is the relative major's
 /// field rotated so the sixth degree becomes the tonic: Am → Am Bm C Dm Em F G.
+///
+/// Display names avoid double accidentals and rare spellings (E#, B#, Cb, Fb)
+/// so A# `6 5 4` is `Gm F D#`, not `F##m E# D#`.
 class _HarmonicField {
   _HarmonicField._(this._notes, this._isMinor);
 
@@ -207,6 +210,7 @@ class _HarmonicField {
       final letter = _parseNote(note)!.letter;
       note = _formatNote(letter, (_pitchClass(note)! + accidental) % 12);
     }
+    note = _simplifyForDisplay(note);
 
     final isMinor = switch (quality) {
       _ChordQuality.major => false,
@@ -272,6 +276,34 @@ class _HarmonicField {
       -1 => '${letter}b',
       -2 => '${letter}bb',
       _ => letter,
+    };
+  }
+
+  /// Worship cifras prefer names a guitarist would actually write: never
+  /// double accidentals, and never E# / B# / Cb / Fb.
+  ///
+  /// Internal scale spelling stays letter-correct (A# major still *is*
+  /// A# B# C## …) so relative-major math keeps working; only the emitted
+  /// chord name is respelt. A# stays A# and D# stays D# — those are already
+  /// readable. F## / E# / G## become G / F / A.
+  static const _sharpChromatic = [
+    'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+  ];
+  static const _flatChromatic = [
+    'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B',
+  ];
+
+  static String _simplifyForDisplay(String note) {
+    if (_isPracticalSpelling(note)) return note;
+    final pc = _pitchClass(note)!;
+    return note.contains('#') ? _sharpChromatic[pc] : _flatChromatic[pc];
+  }
+
+  static bool _isPracticalSpelling(String note) {
+    if (note.contains('##') || note.contains('bb')) return false;
+    return switch (note) {
+      'E#' || 'B#' || 'Cb' || 'Fb' => false,
+      _ => true,
     };
   }
 }
