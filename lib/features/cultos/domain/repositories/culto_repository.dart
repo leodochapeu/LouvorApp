@@ -9,6 +9,8 @@ abstract class CultoRepository {
 
   Future<Culto> getById(String id);
 
+  Future<Culto?> findBySlug(String slug);
+
   Future<Culto> create(CultoInput input);
 
   Future<Culto> update(String id, CultoInput input);

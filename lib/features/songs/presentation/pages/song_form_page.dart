@@ -233,7 +233,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
       if (widget.args?.popOnSave == true) {
         context.pop(saved);
       } else {
-        context.go(AppRoutes.songDetailPath(saved.id));
+        context.go(AppRoutes.songDetailPath(saved.slug));
       }
     } else {
       final error = ref.read(songMutationControllerProvider).error;

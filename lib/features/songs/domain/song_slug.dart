@@ -25,13 +25,13 @@ abstract final class SongSlug {
     return kebab(combined);
   }
 
-  static String kebab(String raw) {
+  static String kebab(String raw, {String? fallback}) {
     var value = raw.trim().toLowerCase();
     value = _stripDiacritics(value);
     value = value.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
     value = value.replaceAll(RegExp(r'-{2,}'), '-');
     value = value.replaceAll(RegExp(r'^-+|-+$'), '');
-    return value.isEmpty ? fallback : value;
+    return value.isEmpty ? (fallback ?? SongSlug.fallback) : value;
   }
 
   static String _stripDiacritics(String value) {

@@ -1,4 +1,5 @@
 import '../../../../core/utils/date_formatters.dart';
+import '../../domain/culto_slug.dart';
 import '../../domain/entities/culto.dart';
 
 /// Maps between the `cultos` Supabase table rows and the [Culto] domain
@@ -6,12 +7,17 @@ import '../../domain/entities/culto.dart';
 /// never deals with raw JSON/column names.
 abstract final class CultoModel {
   static Culto fromJson(Map<String, dynamic> json) {
+    final title = json['title'] as String;
+    final date = DateFormatters.fromIsoDate(json['service_date'] as String);
     return Culto(
       id: json['id'] as String,
-      title: json['title'] as String,
-      date: DateFormatters.fromIsoDate(json['service_date'] as String),
+      title: title,
+      date: date,
       songIds: List<String>.from(json['song_ids'] as List? ?? const []),
       songKeys: songKeysFromJson(json['song_keys']),
+      slug: (json['slug'] as String?)?.trim().isNotEmpty == true
+          ? json['slug'] as String
+          : CultoSlug.from(title: title, date: date),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -23,6 +29,7 @@ abstract final class CultoModel {
       'service_date': DateFormatters.toIsoDate(input.date),
       'song_ids': input.songIds,
       'song_keys': input.songKeys,
+      'slug': input.slug,
     };
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../../../core/config/supabase_providers.dart';
+import '../../../../core/utils/route_id.dart';
 import '../../data/repositories/song_repository_impl.dart';
 import '../../domain/entities/song.dart';
 import '../../domain/repositories/song_repository.dart';
@@ -45,14 +46,22 @@ final filteredSongsProvider = Provider<AsyncValue<List<Song>>>((ref) {
   });
 });
 
-/// A single song by id, sourced from the already-loaded live list when
-/// available so opening a song from the list is instant; falls back to a
-/// direct fetch (e.g. on a deep link straight to a song's detail page).
-final songByIdProvider = FutureProvider.family<Song, String>((ref, id) async {
+/// A single song by public route param (slug, or a legacy UUID), sourced
+/// from the already-loaded live list when available so opening a song from
+/// the list is instant; falls back to a direct fetch (e.g. on a deep link).
+final songByIdProvider = FutureProvider.family<Song, String>((ref, idOrSlug) async {
   final cached = ref.watch(songsStreamProvider).value;
-  final match = cached?.where((song) => song.id == id).firstOrNull;
+  final match = cached
+      ?.where((song) => song.id == idOrSlug || song.slug == idOrSlug)
+      .firstOrNull;
   if (match != null) return match;
-  return ref.watch(songRepositoryProvider).getById(id);
+  final repo = ref.watch(songRepositoryProvider);
+  if (RouteId.isUuid(idOrSlug)) {
+    return repo.getById(idOrSlug);
+  }
+  final bySlug = await repo.findBySlug(idOrSlug);
+  if (bySlug != null) return bySlug;
+  throw StateError('Música não encontrada');
 });
 
 /// Handles create/update/delete, exposing loading/error state for the form

@@ -106,7 +106,8 @@ então a pessoa continua editando o texto puro, não o JSON.
    - a tabela `songs` (título, autores, tom original, e
      `lyrics` como `jsonb` — ver "Formato da letra/cifra" acima);
    - a tabela `cultos` (nome, data, `song_ids` — lista ordenada de músicas
-     do culto — e `song_keys` — tom de cada música naquele culto);
+     do culto — `song_keys` — tom de cada música naquele culto — e `slug`
+     único para o link de compartilhamento);
    - índices para busca por título/autor/conteúdo/data;
    - Row Level Security: **leitura pública**, **escrita só autenticado**;
    - as tabelas habilitadas no Realtime (as listagens atualizam sozinhas
@@ -172,6 +173,18 @@ Settings**, use:
   flutter/bin/flutter build web --release --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
   ```
 - **Output Directory**: `build/web`
+
+O [`vercel.json`](vercel.json) na raiz do repositório:
+
+- reescreve rotas como `/songs/slug-da-musica` para o `index.html` (URLs
+  sem `#`, para o Flutter path URL strategy);
+- quando o visitante é um crawler (WhatsApp, Facebook, etc.), `/api/share`
+  busca a música/culto no Supabase e devolve Open Graph com título e
+  descrição daquela página.
+
+As mesmas env vars `SUPABASE_URL` e `SUPABASE_ANON_KEY` também precisam
+estar disponíveis em **runtime** (não só no build), senão o preview do
+WhatsApp cai na descrição genérica.
 
 E em **Project Settings -> Environment Variables**, cadastre `SUPABASE_URL`
 e `SUPABASE_ANON_KEY` com os mesmos valores do seu `.env.json` local (para

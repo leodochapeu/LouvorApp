@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'culto_slug.dart';
+
 /// A worship service ("culto"): a named date with an ordered setlist of
 /// already-registered songs.
 class Culto extends Equatable {
@@ -9,6 +11,7 @@ class Culto extends Equatable {
     required this.date,
     required this.songIds,
     this.songKeys = const {},
+    required this.slug,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -26,6 +29,9 @@ class Culto extends Equatable {
   /// `songs.id` → tom alterado for this culto. Missing entries mean "play
   /// in the song's original key".
   final Map<String, String> songKeys;
+
+  /// Stable kebab-case identifier from title + date. Unique.
+  final String slug;
 
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -50,6 +56,7 @@ class Culto extends Equatable {
     DateTime? date,
     List<String>? songIds,
     Map<String, String>? songKeys,
+    String? slug,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -59,6 +66,7 @@ class Culto extends Equatable {
       date: date ?? this.date,
       songIds: songIds ?? this.songIds,
       songKeys: songKeys ?? this.songKeys,
+      slug: slug ?? this.slug,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -66,7 +74,7 @@ class Culto extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, title, date, songIds, songKeys, createdAt, updatedAt];
+      [id, title, date, songIds, songKeys, slug, createdAt, updatedAt];
 }
 
 /// Payload used to create or update a culto — no id/timestamps yet.
@@ -82,6 +90,8 @@ class CultoInput extends Equatable {
   final DateTime date;
   final List<String> songIds;
   final Map<String, String> songKeys;
+
+  String get slug => CultoSlug.from(title: title, date: date);
 
   @override
   List<Object?> get props => [title, date, songIds, songKeys];

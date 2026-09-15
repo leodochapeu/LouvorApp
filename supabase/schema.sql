@@ -253,6 +253,77 @@ alter table public.cultos
 comment on column public.cultos.song_keys is
   'Map of songs.id -> tom alterado for this culto. Songs without an entry use their original_key.';
 
+-- Unique kebab-case identifier from title + service_date, used in share URLs.
+alter table public.cultos add column if not exists slug text;
+
+create or replace function public.culto_slug(p_title text, p_service_date date)
+returns text
+language sql
+immutable
+as $$
+  select concat_ws(
+    '-',
+    coalesce(
+      nullif(
+        trim(both '-' from
+          regexp_replace(
+            regexp_replace(
+              translate(
+                lower(coalesce(p_title, '')),
+                'áàâãäéèêëíìîïóòôõöúùûüýÿçñ',
+                'aaaaaeeeeiiiiooooouuuuyycn'
+              ),
+              '[^a-z0-9]+', '-', 'g'
+            ),
+            '-{2,}', '-', 'g'
+          )
+        ),
+        ''
+      ),
+      'culto'
+    ),
+    to_char(p_service_date, 'YYYY-MM-DD')
+  );
+$$;
+
+create or replace function public.cultos_set_slug()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.slug := public.culto_slug(new.title, new.service_date);
+  return new;
+end;
+$$;
+
+drop trigger if exists cultos_set_slug on public.cultos;
+create trigger cultos_set_slug
+  before insert or update of title, service_date
+  on public.cultos
+  for each row
+  execute function public.cultos_set_slug();
+
+update public.cultos
+set slug = public.culto_slug(title, service_date)
+where slug is null or btrim(slug) = '';
+
+with ranked as (
+  select id, slug,
+    row_number() over (partition by slug order by created_at, id) as rn
+  from public.cultos
+  where slug is not null
+)
+update public.cultos c
+set slug = c.slug || '-' || left(replace(c.id::text, '-', ''), 8)
+from ranked r
+where c.id = r.id and r.rn > 1;
+
+alter table public.cultos alter column slug set not null;
+create unique index if not exists cultos_slug_uidx on public.cultos (slug);
+
+comment on column public.cultos.slug is
+  'Unique kebab-case identifier from title + date. Used in public share URLs.';
+
 -- Existing installs stored the play key on songs.current_key. Copy it onto
 -- every culto that already lists those songs, then drop the catalog column.
 do $$

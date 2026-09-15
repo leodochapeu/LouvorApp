@@ -1,11 +1,11 @@
 {
-    "name": "louvor_app",
-    "short_name": "louvor_app",
+    "name": "Louvor App",
+    "short_name": "Louvor App",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#4F378B",
+    "theme_color": "#4F378B",
+    "description": "Cifras, letras e setlists de louvor para o culto.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

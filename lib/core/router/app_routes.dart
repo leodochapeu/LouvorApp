@@ -5,17 +5,17 @@ abstract final class AppRoutes {
   /// Hidden sign-up page — not linked from the drawer or login screen.
   static const String signUp = '/cadastro';
   static const String songNew = '/songs/new';
-  static const String songDetail = '/songs/:id';
-  static const String songEdit = '/songs/:id/edit';
+  static const String songDetail = '/songs/:slug';
+  static const String songEdit = '/songs/:slug/edit';
 
   static const String cultos = '/cultos';
   static const String cultoNew = '/cultos/new';
-  static const String cultoDetail = '/cultos/:id';
-  static const String cultoEdit = '/cultos/:id/edit';
+  static const String cultoDetail = '/cultos/:slug';
+  static const String cultoEdit = '/cultos/:slug/edit';
 
-  static String songDetailPath(String id) => '/songs/$id';
-  static String songEditPath(String id) => '/songs/$id/edit';
+  static String songDetailPath(String slug) => '/songs/$slug';
+  static String songEditPath(String slug) => '/songs/$slug/edit';
 
-  static String cultoDetailPath(String id) => '/cultos/$id';
-  static String cultoEditPath(String id) => '/cultos/$id/edit';
+  static String cultoDetailPath(String slug) => '/cultos/$slug';
+  static String cultoEditPath(String slug) => '/cultos/$slug/edit';
 }

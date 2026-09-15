@@ -1,0 +1,52 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|googlebot|bingbot|embedly|pinterest|vkshare|skypeuripreview).*"
+        }
+      ],
+      "destination": "/api/share?kind=home"
+    },
+    {
+      "source": "/cultos",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|googlebot|bingbot|embedly|pinterest|vkshare|skypeuripreview).*"
+        }
+      ],
+      "destination": "/api/share?kind=cultos"
+    },
+    {
+      "source": "/songs/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|googlebot|bingbot|embedly|pinterest|vkshare|skypeuripreview).*"
+        }
+      ],
+      "destination": "/api/share?kind=song&slug=:slug"
+    },
+    {
+      "source": "/cultos/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|googlebot|bingbot|embedly|pinterest|vkshare|skypeuripreview).*"
+        }
+      ],
+      "destination": "/api/share?kind=culto&slug=:slug"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

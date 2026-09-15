@@ -79,7 +79,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SignUpPage(),
       ),
       GoRoute(
-        // Declared before `/songs/:id` so "new" is never matched as an id.
+        // Declared before `/songs/:slug` so "new" is never matched as a slug.
         path: AppRoutes.songNew,
         builder: (context, state) {
           final extra = state.extra;
@@ -91,15 +91,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.songDetail,
         builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return SongDetailPage(songId: id);
+          final slug = state.pathParameters['slug']!;
+          return SongDetailPage(slug: slug);
         },
         routes: [
           GoRoute(
             path: 'edit',
             builder: (context, state) {
-              final id = state.pathParameters['id']!;
-              return SongFormPage(songId: id);
+              final slug = state.pathParameters['slug']!;
+              return SongFormPage(songId: slug);
             },
           ),
         ],
@@ -109,22 +109,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CultosListPage(),
       ),
       GoRoute(
-        // Declared before `/cultos/:id` so "new" is never matched as an id.
+        // Declared before `/cultos/:slug` so "new" is never matched as a slug.
         path: AppRoutes.cultoNew,
         builder: (context, state) => const CultoFormPage(),
       ),
       GoRoute(
         path: AppRoutes.cultoDetail,
         builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return CultoDetailPage(cultoId: id);
+          final slug = state.pathParameters['slug']!;
+          return CultoDetailPage(cultoId: slug);
         },
         routes: [
           GoRoute(
             path: 'edit',
             builder: (context, state) {
-              final id = state.pathParameters['id']!;
-              return CultoFormPage(cultoId: id);
+              final slug = state.pathParameters['slug']!;
+              return CultoFormPage(cultoId: slug);
             },
           ),
         ],

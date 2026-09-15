@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,18 +18,28 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Cifras, letras e setlists de louvor para o culto.">
+  <meta property="og:site_name" content="Louvor App">
+  <meta property="og:title" content="Louvor App">
+  <meta property="og:description" content="Cifras, letras e setlists de louvor para o culto.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="/icons/Icon-512.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Louvor App">
+  <meta name="twitter:description" content="Cifras, letras e setlists de louvor para o culto.">
+  <meta name="twitter:image" content="/icons/Icon-512.png">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="louvor_app">
+  <meta name="apple-mobile-web-app-title" content="Louvor App">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" sizes="64x64" href="favicon.png"/>
 
-  <title>louvor_app</title>
+  <title>Louvor App</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -41,6 +51,14 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <script>
+    (function () {
+      var hash = location.hash;
+      if (hash.indexOf('#/') === 0) {
+        history.replaceState(null, '', hash.slice(1) + location.search);
+      }
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../../../core/config/supabase_providers.dart';
 import '../../../../core/utils/date_formatters.dart';
+import '../../../../core/utils/route_id.dart';
 import '../../../songs/domain/entities/song.dart';
 import '../../../songs/presentation/providers/song_providers.dart';
 import '../../data/repositories/culto_repository_impl.dart';
@@ -60,14 +61,22 @@ final filteredCultosProvider = Provider<AsyncValue<List<Culto>>>((ref) {
   });
 });
 
-/// A single culto by id, sourced from the already-loaded live list when
-/// available so opening a culto from the list is instant; falls back to a
-/// direct fetch (e.g. on a deep link straight to a culto's detail page).
-final cultoByIdProvider = FutureProvider.family<Culto, String>((ref, id) async {
+/// A single culto by public route param (slug, or a legacy UUID), sourced
+/// from the already-loaded live list when available so opening a culto from
+/// the list is instant; falls back to a direct fetch (e.g. on a deep link).
+final cultoByIdProvider = FutureProvider.family<Culto, String>((ref, idOrSlug) async {
   final cached = ref.watch(cultosStreamProvider).value;
-  final match = cached?.where((culto) => culto.id == id).firstOrNull;
+  final match = cached
+      ?.where((culto) => culto.id == idOrSlug || culto.slug == idOrSlug)
+      .firstOrNull;
   if (match != null) return match;
-  return ref.watch(cultoRepositoryProvider).getById(id);
+  final repo = ref.watch(cultoRepositoryProvider);
+  if (RouteId.isUuid(idOrSlug)) {
+    return repo.getById(idOrSlug);
+  }
+  final bySlug = await repo.findBySlug(idOrSlug);
+  if (bySlug != null) return bySlug;
+  throw StateError('Culto não encontrado');
 });
 
 /// Resolves a culto's setlist into full [Song]s, in setlist order, with

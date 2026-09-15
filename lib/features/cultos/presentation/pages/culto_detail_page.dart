@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/share/share_link.dart';
+import '../../../../core/share/share_preview.dart';
 import '../../../../core/utils/date_formatters.dart';
 import '../../../../core/widgets/buttons/app_icon_button.dart';
 import '../../../../core/widgets/feedback/app_confirm_dialog.dart';
@@ -11,6 +13,7 @@ import '../../../../core/widgets/feedback/app_empty_state.dart';
 import '../../../../core/widgets/feedback/app_error_view.dart';
 import '../../../../core/widgets/feedback/app_loading_indicator.dart';
 import '../../../../core/widgets/layout/app_drawer.dart';
+import '../../../../core/widgets/layout/app_page_title.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../songs/domain/entities/song.dart';
 import '../../../songs/presentation/providers/song_providers.dart';
@@ -63,6 +66,13 @@ class CultoDetailPage extends ConsumerWidget {
     );
   }
 
+  Future<void> _share(BuildContext context, Culto culto) {
+    return ShareLink.copy(
+      context,
+      url: ShareLink.forPath(AppRoutes.cultoDetailPath(culto.slug)),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cultoAsync = ref.watch(cultoByIdProvider(cultoId));
@@ -70,15 +80,38 @@ class CultoDetailPage extends ConsumerWidget {
     final isLoggedIn = ref.watch(isLoggedInProvider);
     final viewMode = ref.watch(cultoViewModeProvider);
 
-    return Scaffold(
+    ref.listen(cultoByIdProvider(cultoId), (previous, next) {
+      final culto = next.value;
+      if (culto == null || culto.slug == cultoId) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.replace(AppRoutes.cultoDetailPath(culto.slug));
+        }
+      });
+    });
+
+    final pageTitle = cultoAsync.value == null
+        ? SharePreview.pageTitle('Culto')
+        : SharePreview.cultoTitle(cultoAsync.value!.title);
+
+    return AppPageTitle(
+      title: pageTitle,
+      child: Scaffold(
       appBar: AppBar(
         title: Text(cultoAsync.value?.title ?? 'Culto'),
         actions: [
+          if (cultoAsync.hasValue)
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Compartilhar',
+              onPressed: () => _share(context, cultoAsync.requireValue),
+            ),
           if (isLoggedIn && cultoAsync.hasValue) ...[
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               tooltip: 'Editar',
-              onPressed: () => context.push(AppRoutes.cultoEditPath(cultoId)),
+              onPressed: () =>
+                  context.push(AppRoutes.cultoEditPath(cultoAsync.requireValue.slug)),
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -135,6 +168,7 @@ class CultoDetailPage extends ConsumerWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -236,7 +270,7 @@ class _CardsView extends StatelessWidget {
             Expanded(
               child: SongCard(
                 song: song,
-                onTap: () => context.push(AppRoutes.songDetailPath(song.id)),
+                onTap: () => context.push(AppRoutes.songDetailPath(song.slug)),
               ),
             ),
           ],

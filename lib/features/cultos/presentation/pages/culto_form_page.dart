@@ -16,6 +16,7 @@ import '../../../songs/domain/song_catalog_lookup.dart';
 import '../../../songs/presentation/pages/song_form_page.dart';
 import '../../../songs/presentation/providers/song_providers.dart';
 import '../../domain/culto_template.dart';
+import '../../domain/duplicate_culto_exception.dart';
 import '../../domain/entities/culto.dart';
 import '../providers/culto_providers.dart';
 import '../widgets/culto_song_picker.dart';
@@ -259,11 +260,14 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
     if (!mounted) return;
 
     if (saved != null) {
-      context.go(AppRoutes.cultoDetailPath(saved.id));
+      context.go(AppRoutes.cultoDetailPath(saved.slug));
     } else {
       final error = ref.read(cultoMutationControllerProvider).error;
+      final message = error is DuplicateCultoException
+          ? error.toString()
+          : 'Não foi possível salvar o culto.\n$error';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Não foi possível salvar o culto.\n$error')),
+        SnackBar(content: Text(message)),
       );
     }
   }
