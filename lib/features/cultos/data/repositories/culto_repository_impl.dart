@@ -58,8 +58,7 @@ class CultoRepositoryImpl implements CultoRepository {
   }
 
   @override
-  Future<Culto> create(CultoInput input) async {
-    await _ensureSlugAvailable(input.slug);
+  Future<Culto> create(CultoInput input) {
     return _write(() async {
       final row = await _client
           .from(_table)
@@ -71,8 +70,7 @@ class CultoRepositoryImpl implements CultoRepository {
   }
 
   @override
-  Future<Culto> update(String id, CultoInput input) async {
-    await _ensureSlugAvailable(input.slug, excludingId: id);
+  Future<Culto> update(String id, CultoInput input) {
     return _write(() async {
       final row = await _client
           .from(_table)
@@ -87,13 +85,6 @@ class CultoRepositoryImpl implements CultoRepository {
   @override
   Future<void> delete(String id) async {
     await _client.from(_table).delete().eq('id', id);
-  }
-
-  Future<void> _ensureSlugAvailable(String slug, {String? excludingId}) async {
-    final existing = await findBySlug(slug);
-    if (existing == null) return;
-    if (excludingId != null && existing.id == excludingId) return;
-    throw const DuplicateCultoException();
   }
 
   Future<Culto> _write(Future<Culto> Function() action) async {

@@ -256,7 +256,9 @@ comment on column public.cultos.song_keys is
 -- Unique kebab-case identifier from title + service_date, used in share URLs.
 alter table public.cultos add column if not exists slug text;
 
-create or replace function public.culto_slug(p_title text, p_service_date date)
+drop function if exists public.culto_slug(text, date);
+
+create or replace function public.culto_slug(p_title text, p_service_date date, p_id uuid)
 returns text
 language sql
 immutable
@@ -282,7 +284,8 @@ as $$
       ),
       'culto'
     ),
-    to_char(p_service_date, 'YYYY-MM-DD')
+    to_char(p_service_date, 'DD-MM'),
+    p_id::text
   );
 $$;
 
@@ -291,7 +294,7 @@ returns trigger
 language plpgsql
 as $$
 begin
-  new.slug := public.culto_slug(new.title, new.service_date);
+  new.slug := public.culto_slug(new.title, new.service_date, new.id);
   return new;
 end;
 $$;
@@ -304,25 +307,13 @@ create trigger cultos_set_slug
   execute function public.cultos_set_slug();
 
 update public.cultos
-set slug = public.culto_slug(title, service_date)
-where slug is null or btrim(slug) = '';
-
-with ranked as (
-  select id, slug,
-    row_number() over (partition by slug order by created_at, id) as rn
-  from public.cultos
-  where slug is not null
-)
-update public.cultos c
-set slug = c.slug || '-' || left(replace(c.id::text, '-', ''), 8)
-from ranked r
-where c.id = r.id and r.rn > 1;
+set slug = public.culto_slug(title, service_date, id);
 
 alter table public.cultos alter column slug set not null;
 create unique index if not exists cultos_slug_uidx on public.cultos (slug);
 
 comment on column public.cultos.slug is
-  'Unique kebab-case identifier from title + date. Used in public share URLs.';
+  'Share URL identifier: kebab(title)-DD-MM-<uuid>.';
 
 -- Existing installs stored the play key on songs.current_key. Copy it onto
 -- every culto that already lists those songs, then drop the catalog column.

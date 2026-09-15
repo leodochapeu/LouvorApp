@@ -8,6 +8,7 @@ import '../../../../core/utils/route_id.dart';
 import '../../../songs/domain/entities/song.dart';
 import '../../../songs/presentation/providers/song_providers.dart';
 import '../../data/repositories/culto_repository_impl.dart';
+import '../../domain/culto_slug.dart';
 import '../../domain/entities/culto.dart';
 import '../../domain/repositories/culto_repository.dart';
 
@@ -65,14 +66,21 @@ final filteredCultosProvider = Provider<AsyncValue<List<Culto>>>((ref) {
 /// from the already-loaded live list when available so opening a culto from
 /// the list is instant; falls back to a direct fetch (e.g. on a deep link).
 final cultoByIdProvider = FutureProvider.family<Culto, String>((ref, idOrSlug) async {
+  final extractedId = CultoSlug.idFrom(idOrSlug);
   final cached = ref.watch(cultosStreamProvider).value;
   final match = cached
-      ?.where((culto) => culto.id == idOrSlug || culto.slug == idOrSlug)
+      ?.where(
+        (culto) =>
+            culto.id == idOrSlug ||
+            culto.slug == idOrSlug ||
+            (extractedId != null && culto.id == extractedId),
+      )
       .firstOrNull;
   if (match != null) return match;
   final repo = ref.watch(cultoRepositoryProvider);
-  if (RouteId.isUuid(idOrSlug)) {
-    return repo.getById(idOrSlug);
+  final id = extractedId ?? (RouteId.isUuid(idOrSlug) ? idOrSlug : null);
+  if (id != null) {
+    return repo.getById(id);
   }
   final bySlug = await repo.findBySlug(idOrSlug);
   if (bySlug != null) return bySlug;

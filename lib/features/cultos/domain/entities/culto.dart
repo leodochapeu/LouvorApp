@@ -1,7 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-import 'culto_slug.dart';
-
 /// A worship service ("culto"): a named date with an ordered setlist of
 /// already-registered songs.
 class Culto extends Equatable {
@@ -30,7 +28,7 @@ class Culto extends Equatable {
   /// in the song's original key".
   final Map<String, String> songKeys;
 
-  /// Stable kebab-case identifier from title + date. Unique.
+  /// Public URL identifier: `culto-de-domingo-30-08-<uuid>`.
   final String slug;
 
   final DateTime createdAt;
@@ -90,8 +88,6 @@ class CultoInput extends Equatable {
   final DateTime date;
   final List<String> songIds;
   final Map<String, String> songKeys;
-
-  String get slug => CultoSlug.from(title: title, date: date);
 
   @override
   List<Object?> get props => [title, date, songIds, songKeys];

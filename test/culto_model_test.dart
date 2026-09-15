@@ -47,7 +47,7 @@ void main() {
       expect(json['song_ids'], ['song-a']);
       expect(json['song_keys'], {'song-a': 'Dm'});
       expect(json['service_date'], '2026-09-15');
-      expect(json['slug'], 'culto-2026-09-15');
+      expect(json.containsKey('slug'), isFalse);
     });
   });
 }

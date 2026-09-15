@@ -50,5 +50,14 @@ void main() {
     test('rejects a slug', () {
       expect(RouteId.isUuid('grande-e-o-senhor-adhemar-de-campos'), isFalse);
     });
+
+    test('reads a uuid at the end of a culto slug', () {
+      expect(
+        RouteId.uuidAtEnd(
+          'culto-de-domingo-30-08-173f5f23-ff0e-4142-96b8-eeaabac8d642',
+        ),
+        '173f5f23-ff0e-4142-96b8-eeaabac8d642',
+      );
+    });
   });
 }

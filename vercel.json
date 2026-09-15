@@ -34,6 +34,17 @@
       "destination": "/api/share?kind=song&slug=:slug"
     },
     {
+      "source": "/culto/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|telegrambot|discordbot|googlebot|bingbot|embedly|pinterest|vkshare|skypeuripreview).*"
+        }
+      ],
+      "destination": "/api/share?kind=culto&slug=:slug"
+    },
+    {
       "source": "/cultos/:slug",
       "has": [
         {

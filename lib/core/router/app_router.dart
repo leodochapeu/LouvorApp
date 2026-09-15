@@ -109,7 +109,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CultosListPage(),
       ),
       GoRoute(
-        // Declared before `/cultos/:slug` so "new" is never matched as a slug.
+        // Declared before `/culto/:slug` so "new" is never matched as a slug.
         path: AppRoutes.cultoNew,
         builder: (context, state) => const CultoFormPage(),
       ),
@@ -125,6 +125,25 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) {
               final slug = state.pathParameters['slug']!;
               return CultoFormPage(cultoId: slug);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        // Old `/cultos/:slug` links keep working after the path moved to
+        // the singular `/culto/:slug`.
+        path: '/cultos/:slug',
+        redirect: (context, state) {
+          final slug = state.pathParameters['slug']!;
+          if (slug == 'new') return AppRoutes.cultoNew;
+          return AppRoutes.cultoDetailPath(slug);
+        },
+        routes: [
+          GoRoute(
+            path: 'edit',
+            redirect: (context, state) {
+              final slug = state.pathParameters['slug']!;
+              return AppRoutes.cultoEditPath(slug);
             },
           ),
         ],

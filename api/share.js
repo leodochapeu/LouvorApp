@@ -57,7 +57,7 @@ function requestOrigin(req) {
 function canonicalUrl(origin, kind, slug, canonicalSlug) {
   const pathSlug = canonicalSlug || slug;
   if (kind === 'song' && pathSlug) return `${origin}/songs/${pathSlug}`;
-  if (kind === 'culto' && pathSlug) return `${origin}/cultos/${pathSlug}`;
+  if (kind === 'culto' && pathSlug) return `${origin}/culto/${pathSlug}`;
   if (kind === 'cultos') return `${origin}/cultos`;
   return `${origin}/`;
 }
@@ -115,8 +115,9 @@ async function fetchRow(table, slug) {
   const key = process.env.SUPABASE_ANON_KEY;
   if (!base || !key || !slug) return null;
 
-  const filter = UUID_RE.test(slug)
-    ? `or=(slug.eq.${encodeURIComponent(slug)},id.eq.${encodeURIComponent(slug)})`
+  const id = idFromSlug(slug);
+  const filter = id
+    ? `id=eq.${encodeURIComponent(id)}`
     : `slug=eq.${encodeURIComponent(slug)}`;
   const url = `${base.replace(/\/$/, '')}/rest/v1/${table}?${filter}&select=*&limit=1`;
 
@@ -133,6 +134,15 @@ async function fetchRow(table, slug) {
   } catch {
     return null;
   }
+}
+
+function idFromSlug(slug) {
+  const value = String(slug);
+  if (UUID_RE.test(value)) return value;
+  const atEnd = value.match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+  return atEnd ? atEnd[0] : null;
 }
 
 function formatLongDate(raw) {

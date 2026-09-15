@@ -9,13 +9,13 @@ abstract final class AppRoutes {
   static const String songEdit = '/songs/:slug/edit';
 
   static const String cultos = '/cultos';
-  static const String cultoNew = '/cultos/new';
-  static const String cultoDetail = '/cultos/:slug';
-  static const String cultoEdit = '/cultos/:slug/edit';
+  static const String cultoNew = '/culto/new';
+  static const String cultoDetail = '/culto/:slug';
+  static const String cultoEdit = '/culto/:slug/edit';
 
   static String songDetailPath(String slug) => '/songs/$slug';
   static String songEditPath(String slug) => '/songs/$slug/edit';
 
-  static String cultoDetailPath(String slug) => '/cultos/$slug';
-  static String cultoEditPath(String slug) => '/cultos/$slug/edit';
+  static String cultoDetailPath(String slug) => '/culto/$slug';
+  static String cultoEditPath(String slug) => '/culto/$slug/edit';
 }
