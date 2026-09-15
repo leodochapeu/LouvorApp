@@ -16,11 +16,16 @@ import '../../domain/entities/song.dart';
 import '../providers/song_providers.dart';
 import '../widgets/song_detail_content.dart';
 
-/// Shows a song's full lyrics + chords, along with its original key.
+/// Shows a song's full lyrics + chords. When [playKey] comes from a culto
+/// (`?tom=`), the original key is muted and the culto key is shown as
+/// "Tom alterado".
 class SongDetailPage extends ConsumerWidget {
-  const SongDetailPage({super.key, required this.slug});
+  const SongDetailPage({super.key, required this.slug, this.playKey});
 
   final String slug;
+
+  /// Optional tom of the culto this song was opened from.
+  final String? playKey;
 
   Future<void> _delete(BuildContext context, WidgetRef ref, Song song) async {
     final confirmed = await AppConfirmDialog.show(
@@ -47,7 +52,9 @@ class SongDetailPage extends ConsumerWidget {
   Future<void> _share(BuildContext context, Song song) {
     return ShareLink.copy(
       context,
-      url: ShareLink.forPath(AppRoutes.songDetailPath(song.slug)),
+      url: ShareLink.forPath(
+        AppRoutes.songDetailPath(song.slug, playKey: playKey),
+      ),
     );
   }
 
@@ -61,7 +68,9 @@ class SongDetailPage extends ConsumerWidget {
       if (song == null || song.slug == slug) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
-          context.replace(AppRoutes.songDetailPath(song.slug));
+          context.replace(
+            AppRoutes.songDetailPath(song.slug, playKey: playKey),
+          );
         }
       });
     });
@@ -116,7 +125,7 @@ class SongDetailPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SongDetailContent(song: song),
+                      SongDetailContent(song: song.withPlayKey(playKey)),
                       const SizedBox(height: AppSizes.xxl),
                     ],
                   ),

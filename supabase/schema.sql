@@ -263,30 +263,41 @@ returns text
 language sql
 immutable
 as $$
-  select concat_ws(
-    '-',
-    coalesce(
-      nullif(
-        trim(both '-' from
-          regexp_replace(
+  with raw as (
+    select
+      to_char(p_service_date, 'DD-MM') as dmy,
+      coalesce(
+        nullif(
+          trim(both '-' from
             regexp_replace(
-              translate(
-                lower(coalesce(p_title, '')),
-                'áàâãäéèêëíìîïóòôõöúùûüýÿçñ',
-                'aaaaaeeeeiiiiooooouuuuyycn'
+              regexp_replace(
+                translate(
+                  lower(coalesce(p_title, '')),
+                  'áàâãäéèêëíìîïóòôõöúùûüýÿçñ',
+                  'aaaaaeeeeiiiiooooouuuuyycn'
+                ),
+                '[^a-z0-9]+', '-', 'g'
               ),
-              '[^a-z0-9]+', '-', 'g'
-            ),
-            '-{2,}', '-', 'g'
-          )
+              '-{2,}', '-', 'g'
+            )
+          ),
+          ''
         ),
-        ''
-      ),
-      'culto'
-    ),
-    to_char(p_service_date, 'DD-MM'),
-    p_id::text
-  );
+        'culto'
+      ) as stem
+  ),
+  stripped as (
+    select
+      dmy,
+      case
+        when stem = dmy then 'culto'
+        when right(stem, length(dmy) + 1) = '-' || dmy then
+          coalesce(nullif(left(stem, length(stem) - length(dmy) - 1), ''), 'culto')
+        else stem
+      end as stem
+    from raw
+  )
+  select concat_ws('-', stem, dmy, p_id::text) from stripped;
 $$;
 
 create or replace function public.cultos_set_slug()

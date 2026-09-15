@@ -21,6 +21,13 @@ void main() {
       expect(culto.playKeyFor('song-b'), isNull);
     });
 
+    test('parses song_keys from a JSON string', () {
+      expect(
+        CultoModel.songKeysFromJson('{"song-a": "A"}'),
+        {'song-a': 'A'},
+      );
+    });
+
     test('treats a missing song_keys column as an empty map', () {
       final culto = CultoModel.fromJson({
         'id': 'culto-1',

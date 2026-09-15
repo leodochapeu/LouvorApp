@@ -24,6 +24,17 @@ void main() {
         'culto-15-09-culto-1',
       );
     });
+
+    test('does not repeat the date when the title already includes it', () {
+      expect(
+        CultoSlug.from(
+          title: 'Culto de ceia (06/09)',
+          date: DateTime(2026, 9, 6),
+          id: '92a0f4f9-193b-4547-8e78-91606baeca7c',
+        ),
+        'culto-de-ceia-06-09-92a0f4f9-193b-4547-8e78-91606baeca7c',
+      );
+    });
   });
 
   group('CultoSlug.idFrom', () {

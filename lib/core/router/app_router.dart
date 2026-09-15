@@ -92,7 +92,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.songDetail,
         builder: (context, state) {
           final slug = state.pathParameters['slug']!;
-          return SongDetailPage(slug: slug);
+          return SongDetailPage(
+            slug: slug,
+            playKey: state.uri.queryParameters['tom'],
+          );
         },
         routes: [
           GoRoute(

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../../../core/utils/date_formatters.dart';
 import '../../domain/culto_slug.dart';
 import '../../domain/entities/culto.dart';
@@ -33,11 +35,21 @@ abstract final class CultoModel {
 
   /// `{"song-uuid": "A"}` — empty/invalid values are dropped.
   static Map<String, String> songKeysFromJson(Object? raw) {
-    if (raw is! Map) return const {};
-    return {
-      for (final entry in raw.entries)
-        if (_nonEmpty(entry.value) != null) entry.key.toString(): _nonEmpty(entry.value)!,
-    };
+    var value = raw;
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        value = jsonDecode(value);
+      } on FormatException {
+        return const {};
+      }
+    }
+    if (value is! Map) return const {};
+    final keys = <String, String>{};
+    for (final entry in value.entries) {
+      final key = _nonEmpty(entry.value);
+      if (key != null) keys[entry.key.toString()] = key;
+    }
+    return keys;
   }
 
   static String? _nonEmpty(Object? value) {

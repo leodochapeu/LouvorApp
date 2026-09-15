@@ -11,10 +11,24 @@ abstract final class CultoSlug {
     required DateTime date,
     required String id,
   }) {
-    final stem = SongSlug.kebab(title, fallback: fallback);
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
-    return '$stem-$day-$month-$id';
+    final dateToken = '$day-$month';
+    var stem = SongSlug.kebab(title, fallback: fallback);
+    // Titles like "Culto de ceia (06/09)" already carry the date; don't
+    // append it again (`…-06-09-06-09-<uuid>`).
+    while (stem == dateToken || stem.endsWith('-$dateToken')) {
+      if (stem == dateToken) {
+        stem = fallback;
+        break;
+      }
+      stem = stem.substring(0, stem.length - dateToken.length - 1);
+      if (stem.isEmpty) {
+        stem = fallback;
+        break;
+      }
+    }
+    return '$stem-$dateToken-$id';
   }
 
   /// UUID at the end of a culto slug, or [slug] itself when it is a UUID.

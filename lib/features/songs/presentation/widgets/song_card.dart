@@ -42,7 +42,7 @@ class SongCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          SongKeyBadge(label: 'Tom', musicalKey: song.effectiveKey),
+          Flexible(child: SongKeyBadges(song: song, compact: true)),
         ],
       ),
     );

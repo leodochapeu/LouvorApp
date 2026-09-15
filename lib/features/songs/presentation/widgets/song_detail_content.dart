@@ -65,21 +65,7 @@ class SongDetailContent extends ConsumerWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  SongKeyBadge(
-                    label: 'Tom original',
-                    musicalKey: song.originalKey,
-                    enabled: !song.hasAlteredKey,
-                  ),
-                  if (song.hasAlteredKey)
-                    SongKeyBadge(label: 'Tom alterado', musicalKey: song.currentKey),
-                ],
-              ),
-            ),
+            Expanded(child: SongKeyBadges(song: song)),
             if (song.hasPlayableKey) const ChordDisplayModeButton(),
           ],
         ),

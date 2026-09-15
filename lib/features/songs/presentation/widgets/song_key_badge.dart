@@ -1,5 +1,50 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/entities/song.dart';
+
+/// Original + optional altered key badges. When the song is being played
+/// in another key (a culto's tom), the original is muted and "Tom alterado"
+/// is highlighted.
+class SongKeyBadges extends StatelessWidget {
+  const SongKeyBadges({
+    super.key,
+    required this.song,
+    this.compact = false,
+  });
+
+  final Song song;
+
+  /// Catalog cards use a short "Tom" label when there is no altered key.
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!song.hasAlteredKey) {
+      return SongKeyBadge(
+        label: compact ? 'Tom' : 'Tom original',
+        musicalKey: song.originalKey,
+      );
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: compact ? WrapAlignment.end : WrapAlignment.start,
+      children: [
+        SongKeyBadge(
+          label: 'Tom original',
+          musicalKey: song.originalKey,
+          enabled: false,
+        ),
+        SongKeyBadge(
+          label: 'Tom alterado',
+          musicalKey: song.currentKey,
+        ),
+      ],
+    );
+  }
+}
+
 /// Small badge showing a musical key, e.g. "Tom: C".
 class SongKeyBadge extends StatelessWidget {
   const SongKeyBadge({

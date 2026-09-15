@@ -13,7 +13,12 @@ abstract final class AppRoutes {
   static const String cultoDetail = '/culto/:slug';
   static const String cultoEdit = '/culto/:slug/edit';
 
-  static String songDetailPath(String slug) => '/songs/$slug';
+  static String songDetailPath(String slug, {String? playKey}) {
+    final path = '/songs/$slug';
+    final tom = playKey?.trim();
+    if (tom == null || tom.isEmpty) return path;
+    return Uri(path: path, queryParameters: {'tom': tom}).toString();
+  }
   static String songEditPath(String slug) => '/songs/$slug/edit';
 
   static String cultoDetailPath(String slug) => '/culto/$slug';

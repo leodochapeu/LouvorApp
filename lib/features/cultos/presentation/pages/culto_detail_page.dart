@@ -270,7 +270,12 @@ class _CardsView extends StatelessWidget {
             Expanded(
               child: SongCard(
                 song: song,
-                onTap: () => context.push(AppRoutes.songDetailPath(song.slug)),
+                onTap: () => context.push(
+                  AppRoutes.songDetailPath(
+                    song.slug,
+                    playKey: song.hasAlteredKey ? song.currentKey : null,
+                  ),
+                ),
               ),
             ),
           ],
