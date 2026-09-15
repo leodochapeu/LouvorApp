@@ -14,7 +14,6 @@ abstract final class SongModel {
       title: title,
       authors: authors,
       originalKey: json['original_key'] as String,
-      currentKey: json['current_key'] as String?,
       lines: SongLineModel.listFromJson(json['lyrics']),
       referenceUrl: json['reference_url'] as String?,
       slug: (json['slug'] as String?)?.trim().isNotEmpty == true
@@ -30,7 +29,6 @@ abstract final class SongModel {
       'title': input.title,
       'authors': input.authors,
       'original_key': input.originalKey,
-      'current_key': input.currentKey,
       'lyrics': SongLineModel.listToJson(input.lines),
       'reference_url': input.referenceUrl,
       'slug': input.slug,

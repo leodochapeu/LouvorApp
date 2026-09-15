@@ -21,7 +21,6 @@ create table if not exists public.songs (
   title        text not null,
   authors      text[] not null default '{}'::text[],
   original_key text not null,              -- "Tom original", e.g. "C"
-  current_key  text,                       -- "Tom alterado", nullable
   -- letra + cifra: ordered array of {"type": "sessao"|"letra"|"cifra"|"extras", "content": "..."},
   -- one object per line. Built from plain text by LyricsParser (Dart) when a
   -- song is saved; see lib/features/songs/domain/lyrics_parser.dart.
@@ -39,7 +38,7 @@ create table if not exists public.songs (
 alter table public.songs add column if not exists reference_url text;
 alter table public.songs add column if not exists slug text;
 
-comment on table public.songs is 'Worship songs: title, authors, key(s), lyrics/chords, optional reference link and unique slug.';
+comment on table public.songs is 'Worship songs: title, authors, original key, lyrics/chords, optional reference link and unique slug.';
 comment on column public.songs.lyrics is
   'Array of {type, content} objects, one per line: type is sessao|letra|cifra|extras.';
 comment on column public.songs.reference_url is
@@ -245,6 +244,37 @@ create table if not exists public.cultos (
 comment on table public.cultos is 'Worship services (cultos): title, date and ordered song setlist.';
 comment on column public.cultos.song_ids is
   'Ordered array of songs.id. The app resolves full songs from the songs table.';
+
+-- Tom alterado is per culto (each service can play the same song in a
+-- different key), not a property of the catalog song.
+alter table public.cultos
+  add column if not exists song_keys jsonb not null default '{}'::jsonb;
+
+comment on column public.cultos.song_keys is
+  'Map of songs.id -> tom alterado for this culto. Songs without an entry use their original_key.';
+
+-- Existing installs stored the play key on songs.current_key. Copy it onto
+-- every culto that already lists those songs, then drop the catalog column.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'songs'
+      and column_name = 'current_key'
+  ) then
+    update public.cultos c
+    set song_keys = coalesce((
+      select jsonb_object_agg(s.id::text, s.current_key)
+      from unnest(c.song_ids) as sid
+      join public.songs s on s.id = sid
+      where s.current_key is not null and btrim(s.current_key) <> ''
+    ), '{}'::jsonb)
+    where coalesce(c.song_keys, '{}'::jsonb) = '{}'::jsonb;
+
+    alter table public.songs drop column current_key;
+  end if;
+end $$;
 
 create index if not exists cultos_service_date_idx on public.cultos (service_date desc);
 create index if not exists cultos_title_lower_idx on public.cultos (lower(title));

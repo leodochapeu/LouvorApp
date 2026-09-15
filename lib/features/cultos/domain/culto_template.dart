@@ -33,7 +33,7 @@ class CultoTemplateSong extends Equatable {
   final List<String> authors;
 
   /// Key written next to the song in the template (the "tom alterado" of
-  /// that culto). Parsed so we can show it, but not applied yet.
+  /// that culto). Applied to the culto setlist, not to the catalog song.
   final String? musicalKey;
 
   final String? referenceUrl;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/musical_keys.dart';
 import '../../../../core/widgets/feedback/app_empty_state.dart';
 import '../../../../core/widgets/feedback/app_error_view.dart';
 import '../../../../core/widgets/feedback/app_loading_indicator.dart';
@@ -13,17 +14,23 @@ import '../../../songs/presentation/widgets/song_key_badge.dart';
 
 /// Lets the user pick already-registered songs into an ordered setlist.
 ///
-/// Selected songs can be reordered (the sequence of the culto) and removed.
-/// A search field below lists catalog songs that are not yet in the setlist.
+/// Selected songs can be reordered (the sequence of the culto), have a
+/// per-culto play key, and be removed. A search field below lists catalog
+/// songs that are not yet in the setlist.
 class CultoSongPicker extends ConsumerStatefulWidget {
   const CultoSongPicker({
     super.key,
     required this.songIds,
+    required this.songKeys,
     required this.onChanged,
   });
 
   final List<String> songIds;
-  final ValueChanged<List<String>> onChanged;
+
+  /// `songs.id` → tom alterado for this culto.
+  final Map<String, String> songKeys;
+
+  final void Function(List<String> songIds, Map<String, String> songKeys) onChanged;
 
   @override
   ConsumerState<CultoSongPicker> createState() => _CultoSongPickerState();
@@ -39,13 +46,22 @@ class _CultoSongPickerState extends ConsumerState<CultoSongPicker> {
     super.dispose();
   }
 
+  Map<String, String> _keysKeeping(Iterable<String> ids) {
+    return {
+      for (final id in ids)
+        if ((widget.songKeys[id] ?? '').trim().isNotEmpty)
+          id: widget.songKeys[id]!.trim(),
+    };
+  }
+
   void _add(String id) {
     if (widget.songIds.contains(id)) return;
-    widget.onChanged([...widget.songIds, id]);
+    widget.onChanged([...widget.songIds, id], _keysKeeping([...widget.songIds, id]));
   }
 
   void _remove(String id) {
-    widget.onChanged(widget.songIds.where((songId) => songId != id).toList());
+    final ids = widget.songIds.where((songId) => songId != id).toList();
+    widget.onChanged(ids, _keysKeeping(ids));
   }
 
   void _reorder(int oldIndex, int newIndex) {
@@ -53,7 +69,18 @@ class _CultoSongPickerState extends ConsumerState<CultoSongPicker> {
     if (newIndex > oldIndex) newIndex -= 1;
     final item = ids.removeAt(oldIndex);
     ids.insert(newIndex, item);
-    widget.onChanged(ids);
+    widget.onChanged(ids, _keysKeeping(ids));
+  }
+
+  void _setKey(Song song, String? key) {
+    final next = Map<String, String>.of(widget.songKeys);
+    final trimmed = key?.trim();
+    if (trimmed == null || trimmed.isEmpty || trimmed == song.originalKey) {
+      next.remove(song.id);
+    } else {
+      next[song.id] = trimmed;
+    }
+    widget.onChanged(widget.songIds, next);
   }
 
   @override
@@ -94,7 +121,7 @@ class _CultoSongPickerState extends ConsumerState<CultoSongPicker> {
             Text('Músicas do culto', style: theme.textTheme.titleSmall),
             const SizedBox(height: AppSizes.xs),
             Text(
-              'Adicione músicas já cadastradas e arraste para definir a ordem.',
+              'Adicione músicas já cadastradas, escolha o tom deste culto e arraste para definir a ordem.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -121,6 +148,8 @@ class _CultoSongPickerState extends ConsumerState<CultoSongPicker> {
                     key: ValueKey(song.id),
                     index: index,
                     song: song,
+                    playKey: widget.songKeys[song.id] ?? song.originalKey,
+                    onKeyChanged: (key) => _setKey(song, key),
                     onRemove: () => _remove(song.id),
                   );
                 },
@@ -173,11 +202,15 @@ class _SelectedSongTile extends StatelessWidget {
     super.key,
     required this.index,
     required this.song,
+    required this.playKey,
+    required this.onKeyChanged,
     required this.onRemove,
   });
 
   final int index;
   final Song song;
+  final String playKey;
+  final ValueChanged<String> onKeyChanged;
   final VoidCallback onRemove;
 
   @override
@@ -185,16 +218,20 @@ class _SelectedSongTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: theme.colorScheme.primaryContainer,
-            foregroundColor: theme.colorScheme.onPrimaryContainer,
-            child: Text(
-              '${index + 1}',
-              style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: CircleAvatar(
+              radius: 14,
+              backgroundColor: theme.colorScheme.primaryContainer,
+              foregroundColor: theme.colorScheme.onPrimaryContainer,
+              child: Text(
+                '${index + 1}',
+                style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -216,6 +253,12 @@ class _SelectedSongTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 4),
+                _CultoKeySelector(
+                  originalKey: song.originalKey,
+                  value: playKey,
+                  onChanged: onKeyChanged,
+                ),
               ],
             ),
           ),
@@ -233,6 +276,57 @@ class _SelectedSongTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CultoKeySelector extends StatelessWidget {
+  const _CultoKeySelector({
+    required this.originalKey,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String originalKey;
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final keys = <String>[
+      originalKey,
+      ...MusicalKeys.all.where((key) => key != originalKey),
+    ];
+    final selected = keys.contains(value) ? value : originalKey;
+
+    return Row(
+      children: [
+        Text(
+          'Tom',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 8),
+        DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: selected,
+            isDense: true,
+            borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+            items: [
+              for (final key in keys)
+                DropdownMenuItem(
+                  value: key,
+                  child: Text(key == originalKey ? '$key (original)' : key),
+                ),
+            ],
+            onChanged: (key) {
+              if (key != null) onChanged(key);
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -273,7 +367,7 @@ class _AvailableSongTile extends StatelessWidget {
               ],
             ),
           ),
-          SongKeyBadge(label: 'Tom', musicalKey: song.effectiveKey),
+          SongKeyBadge(label: 'Tom original', musicalKey: song.originalKey),
         ],
       ),
     );

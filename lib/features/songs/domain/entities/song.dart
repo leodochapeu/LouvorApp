@@ -3,9 +3,11 @@ import 'package:equatable/equatable.dart';
 import '../song_slug.dart';
 import 'song_line.dart';
 
-/// A worship song: title, authors, its original key, an optional key it's
-/// currently being played in, the lyrics+chords ("cifra") content, and an
-/// optional reference link (YouTube, etc.).
+/// A worship song: title, authors, original key, lyrics+chords ("cifra"),
+/// and an optional reference link (YouTube, etc.).
+///
+/// [currentKey] is not stored on the catalog song. It is overlaid when a
+/// culto resolves its setlist — each service picks its own play key.
 class Song extends Equatable {
   const Song({
     required this.id,
@@ -27,8 +29,8 @@ class Song extends Equatable {
   /// "Tom original" — the key the song was originally written/recorded in.
   final String originalKey;
 
-  /// "Tom alterado" — set only when the song is being played in a different
-  /// key than [originalKey].
+  /// "Tom alterado" for the current viewing context (a culto). `null` in
+  /// the catalog, and when the culto uses the original key.
   final String? currentKey;
 
   /// Lyrics + chords ("cifra"), as an ordered list of tagged lines — see
@@ -52,10 +54,23 @@ class Song extends Equatable {
     return originalKey;
   }
 
-  bool get hasAlteredKey => currentKey != null && currentKey != originalKey;
+  bool get hasAlteredKey {
+    final altered = currentKey?.trim();
+    return altered != null && altered.isNotEmpty && altered != originalKey;
+  }
 
   /// True when there is a key to project scale degrees onto chord names.
   bool get hasPlayableKey => effectiveKey.trim().isNotEmpty;
+
+  /// Overlay a culto's play key without mutating the catalog song.
+  Song withPlayKey(String? playKey) {
+    final key = playKey?.trim();
+    final hasKey = key != null && key.isNotEmpty;
+    return copyWith(
+      currentKey: hasKey ? key : null,
+      clearCurrentKey: !hasKey,
+    );
+  }
 
   String get authorsLabel => authors.isEmpty ? 'Autor desconhecido' : authors.join(', ');
 
@@ -110,7 +125,6 @@ class SongInput extends Equatable {
     required this.title,
     required this.authors,
     required this.originalKey,
-    this.currentKey,
     required this.lines,
     this.referenceUrl,
   });
@@ -118,7 +132,6 @@ class SongInput extends Equatable {
   final String title;
   final List<String> authors;
   final String originalKey;
-  final String? currentKey;
   final List<SongLine> lines;
   final String? referenceUrl;
 
@@ -126,5 +139,5 @@ class SongInput extends Equatable {
 
   @override
   List<Object?> get props =>
-      [title, authors, originalKey, currentKey, lines, referenceUrl];
+      [title, authors, originalKey, lines, referenceUrl];
 }

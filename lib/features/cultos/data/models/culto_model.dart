@@ -11,6 +11,7 @@ abstract final class CultoModel {
       title: json['title'] as String,
       date: DateFormatters.fromIsoDate(json['service_date'] as String),
       songIds: List<String>.from(json['song_ids'] as List? ?? const []),
+      songKeys: songKeysFromJson(json['song_keys']),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -21,6 +22,22 @@ abstract final class CultoModel {
       'title': input.title,
       'service_date': DateFormatters.toIsoDate(input.date),
       'song_ids': input.songIds,
+      'song_keys': input.songKeys,
     };
+  }
+
+  /// `{"song-uuid": "A"}` — empty/invalid values are dropped.
+  static Map<String, String> songKeysFromJson(Object? raw) {
+    if (raw is! Map) return const {};
+    return {
+      for (final entry in raw.entries)
+        if (_nonEmpty(entry.value) != null) entry.key.toString(): _nonEmpty(entry.value)!,
+    };
+  }
+
+  static String? _nonEmpty(Object? value) {
+    if (value is! String) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 }

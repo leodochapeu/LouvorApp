@@ -1,5 +1,5 @@
-/// Standard musical keys used across the app for "tom original" and
-/// "tom alterado" selectors.
+/// Standard musical keys used across the app for "tom original" and the
+/// per-culto "tom alterado" selectors.
 ///
 /// Kept as a flat list of major/minor tonalities (e.g. `C`, `C#m`) instead of
 /// a full music-theory model, since the app only needs to store and display

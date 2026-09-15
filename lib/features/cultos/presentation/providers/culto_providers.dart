@@ -70,7 +70,8 @@ final cultoByIdProvider = FutureProvider.family<Culto, String>((ref, id) async {
   return ref.watch(cultoRepositoryProvider).getById(id);
 });
 
-/// Resolves a culto's setlist into full [Song]s, in setlist order.
+/// Resolves a culto's setlist into full [Song]s, in setlist order, with
+/// each song's [Song.currentKey] overlaid from this culto's [Culto.songKeys].
 ///
 /// Songs that were deleted after being added to the culto are skipped.
 /// Prefers already-loaded data so a later realtime timeout doesn't replace
@@ -85,7 +86,7 @@ final songsForCultoProvider = Provider.family<AsyncValue<List<Song>>, String>((r
     final byId = {for (final song in songs) song.id: song};
     return AsyncData([
       for (final id in culto.songIds)
-        if (byId[id] != null) byId[id]!,
+        if (byId[id] != null) byId[id]!.withPlayKey(culto.playKeyFor(id)),
     ]);
   }
 

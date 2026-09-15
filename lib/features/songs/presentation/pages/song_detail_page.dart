@@ -13,7 +13,7 @@ import '../../domain/entities/song.dart';
 import '../providers/song_providers.dart';
 import '../widgets/song_detail_content.dart';
 
-/// Shows a song's full lyrics + chords, along with its original/altered key.
+/// Shows a song's full lyrics + chords, along with its original key.
 class SongDetailPage extends ConsumerWidget {
   const SongDetailPage({super.key, required this.songId});
 

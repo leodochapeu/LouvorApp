@@ -82,6 +82,7 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
   late final _titleController = TextEditingController(text: widget.culto?.title ?? '');
   late DateTime? _date = widget.culto?.date;
   late List<String> _songIds = List.of(widget.culto?.songIds ?? const []);
+  late Map<String, String> _songKeys = Map.of(widget.culto?.songKeys ?? const {});
   List<CultoTemplateSong> _templateSongs = const [];
 
   bool get _isCreating => widget.culto == null;
@@ -106,8 +107,9 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
     ];
   }
 
-  void _syncSongIds(List<Song> catalog) {
+  void _syncSongIds(List<Song> catalog, {bool applyTemplateKeys = false}) {
     final matched = <String>[];
+    final keys = <String, String>{};
     for (final item in _templateSongs) {
       final song = SongCatalogLookup.find(
         catalog: catalog,
@@ -117,10 +119,28 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
       );
       if (song != null && !matched.contains(song.id)) {
         matched.add(song.id);
+        final existing = _songKeys[song.id];
+        if (!applyTemplateKeys && existing != null && existing.trim().isNotEmpty) {
+          keys[song.id] = existing.trim();
+        } else {
+          final templateKey = item.musicalKey?.trim();
+          if (templateKey != null &&
+              templateKey.isNotEmpty &&
+              templateKey != song.originalKey) {
+            keys[song.id] = templateKey;
+          }
+        }
       }
     }
     final extras = _songIds.where((id) => !matched.contains(id));
+    for (final id in extras) {
+      final existing = _songKeys[id];
+      if (existing != null && existing.trim().isNotEmpty) {
+        keys[id] = existing.trim();
+      }
+    }
     _songIds = [...matched, ...extras];
+    _songKeys = keys;
   }
 
   void _applyTemplate(CultoTemplate template) {
@@ -133,7 +153,7 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
         _date = template.date;
       }
       _templateSongs = template.songs;
-      _syncSongIds(catalog);
+      _syncSongIds(catalog, applyTemplateKeys: true);
     });
 
     final missing = _missingSongs(catalog);
@@ -155,7 +175,6 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
           title: item.title,
           authors: item.authors,
           referenceUrl: item.referenceUrl,
-          currentKey: item.musicalKey,
         ),
       ),
     );
@@ -216,10 +235,21 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
       return;
     }
 
+    final byId = {for (final song in catalog) song.id: song};
+    final songKeys = <String, String>{};
+    for (final id in _songIds) {
+      final key = _songKeys[id]?.trim();
+      final original = byId[id]?.originalKey;
+      if (key != null && key.isNotEmpty && key != original) {
+        songKeys[id] = key;
+      }
+    }
+
     final input = CultoInput(
       title: _titleController.text.trim(),
       date: _date!,
       songIds: _songIds,
+      songKeys: songKeys,
     );
 
     final saved = await ref
@@ -314,7 +344,11 @@ class _CultoFormBodyState extends ConsumerState<_CultoFormBody> {
             const SizedBox(height: AppSizes.xl),
             CultoSongPicker(
               songIds: _songIds,
-              onChanged: (ids) => setState(() => _songIds = ids),
+              songKeys: _songKeys,
+              onChanged: (ids, keys) => setState(() {
+                _songIds = ids;
+                _songKeys = keys;
+              }),
             ),
             const SizedBox(height: AppSizes.xl),
             AppPrimaryButton(

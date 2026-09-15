@@ -40,13 +40,11 @@ class SongFormPrefill {
     this.title,
     this.authors,
     this.referenceUrl,
-    this.currentKey,
   });
 
   final String? title;
   final List<String>? authors;
   final String? referenceUrl;
-  final String? currentKey;
 }
 
 /// Create/edit form for a song. `songId == null` means "create new".
@@ -122,8 +120,6 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
     widget.song?.authors ?? widget.args?.prefill?.authors ?? const [],
   );
   late String? _originalKey = widget.song?.originalKey;
-  late String? _currentKey =
-      widget.song?.currentKey ?? widget.args?.prefill?.currentKey;
   int _importTick = 0;
 
   @override
@@ -173,9 +169,6 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
       }
       if (imported.originalKey != null) {
         _originalKey = imported.originalKey;
-        _currentKey = imported.currentKey;
-      } else if (imported.currentKey != null) {
-        _currentKey = imported.currentKey;
       }
       if (imported.lines.isNotEmpty) {
         _lyricsController.text = LyricsParser.toRawText(imported.lines);
@@ -186,7 +179,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
     final filled = [
       if (imported.title.isNotEmpty) 'nome',
       if (imported.authors.isNotEmpty) 'autor',
-      if (imported.originalKey != null || imported.currentKey != null) 'tom',
+      if (imported.originalKey != null) 'tom',
       if (imported.lines.isNotEmpty) 'letra',
     ];
     ScaffoldMessenger.of(context).showSnackBar(
@@ -215,7 +208,6 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
       title: _titleController.text.trim(),
       authors: _authors,
       originalKey: _originalKey!,
-      currentKey: _currentKey,
       lines: LyricsParser.parse(_lyricsController.text),
       referenceUrl: UrlUtils.normalize(_referenceUrlController.text),
     );
@@ -292,30 +284,13 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
                 message: duplicate == null ? null : _duplicateMessage(duplicate),
               ),
             const SizedBox(height: AppSizes.lg),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: MusicalKeyDropdown(
-                    key: ValueKey('original-$_originalKey-$_importTick'),
-                    label: 'Tom original',
-                    value: _originalKey,
-                    onChanged: (value) => setState(() => _originalKey = value),
-                    validator: (value) =>
-                        value == null || value.isEmpty ? 'Selecione o tom' : null,
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: MusicalKeyDropdown(
-                    key: ValueKey('current-$_currentKey-$_importTick'),
-                    label: 'Tom alterado',
-                    value: _currentKey,
-                    allowEmpty: true,
-                    onChanged: (value) => setState(() => _currentKey = value),
-                  ),
-                ),
-              ],
+            MusicalKeyDropdown(
+              key: ValueKey('original-$_originalKey-$_importTick'),
+              label: 'Tom original',
+              value: _originalKey,
+              onChanged: (value) => setState(() => _originalKey = value),
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'Selecione o tom' : null,
             ),
             const SizedBox(height: AppSizes.lg),
             AppTextField(

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/musical_keys.dart';
 
-/// Dropdown to pick a musical key (used for both "tom original" and "tom
-/// alterado"). When [allowEmpty] is true, an extra "Nenhum" option is
-/// offered — used for the optional "tom alterado" field.
+/// Dropdown to pick a musical key (tom original on the song form, tom of
+/// the culto on the setlist picker). When [allowEmpty] is true, an extra
+/// "Nenhum" option is offered.
 class MusicalKeyDropdown extends StatelessWidget {
   const MusicalKeyDropdown({
     super.key,

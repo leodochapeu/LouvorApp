@@ -1,7 +1,8 @@
 # Louvor App
 
 Aplicativo de músicas de louvor: listagem pública com busca, cadastro de
-letra + cifra, tom original e tom alterado, e cultos (setlist de um dia).
+letra + cifra e tom original, e cultos (setlist de um dia, cada um com o
+tom das músicas naquele culto).
 Leitura é pública para qualquer pessoa com o link; edição exige login.
 
 ## Stack
@@ -102,10 +103,10 @@ então a pessoa continua editando o texto puro, não o JSON.
 1. Crie um projeto em https://supabase.com.
 2. Abra o **SQL Editor** do projeto e rode o conteúdo de
    [`supabase/schema.sql`](supabase/schema.sql). Isso cria:
-   - a tabela `songs` (título, autores, tom original, tom alterado, e
+   - a tabela `songs` (título, autores, tom original, e
      `lyrics` como `jsonb` — ver "Formato da letra/cifra" acima);
-   - a tabela `cultos` (nome, data e `song_ids` — lista ordenada de músicas
-     do culto);
+   - a tabela `cultos` (nome, data, `song_ids` — lista ordenada de músicas
+     do culto — e `song_keys` — tom de cada música naquele culto);
    - índices para busca por título/autor/conteúdo/data;
    - Row Level Security: **leitura pública**, **escrita só autenticado**;
    - as tabelas habilitadas no Realtime (as listagens atualizam sozinhas

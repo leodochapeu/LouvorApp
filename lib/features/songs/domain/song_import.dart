@@ -18,7 +18,9 @@ class SongImport extends Equatable {
   /// "Tom original" from `musica.tom_original`.
   final String? originalKey;
 
-  /// "Tom alterado" from `musica.tom`, only when it differs from [originalKey].
+  /// Play key from `musica.tom` when it differs from [originalKey]. Parsed
+  /// for completeness; the song form does not save it — each culto stores
+  /// its own tom alterado.
   final String? currentKey;
 
   /// Lyrics + chords already tagged with the form's line types, ready to

@@ -8,6 +8,7 @@ class Culto extends Equatable {
     required this.title,
     required this.date,
     required this.songIds,
+    this.songKeys = const {},
     required this.createdAt,
     required this.updatedAt,
   });
@@ -22,8 +23,19 @@ class Culto extends Equatable {
   /// presentation from the songs list.
   final List<String> songIds;
 
+  /// `songs.id` → tom alterado for this culto. Missing entries mean "play
+  /// in the song's original key".
+  final Map<String, String> songKeys;
+
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// Play key stored on this culto for [songId], or `null` to use original.
+  String? playKeyFor(String songId) {
+    final key = songKeys[songId]?.trim();
+    if (key == null || key.isEmpty) return null;
+    return key;
+  }
 
   int get songCount => songIds.length;
 
@@ -37,6 +49,7 @@ class Culto extends Equatable {
     String? title,
     DateTime? date,
     List<String>? songIds,
+    Map<String, String>? songKeys,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -45,13 +58,15 @@ class Culto extends Equatable {
       title: title ?? this.title,
       date: date ?? this.date,
       songIds: songIds ?? this.songIds,
+      songKeys: songKeys ?? this.songKeys,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   @override
-  List<Object?> get props => [id, title, date, songIds, createdAt, updatedAt];
+  List<Object?> get props =>
+      [id, title, date, songIds, songKeys, createdAt, updatedAt];
 }
 
 /// Payload used to create or update a culto — no id/timestamps yet.
@@ -60,12 +75,14 @@ class CultoInput extends Equatable {
     required this.title,
     required this.date,
     required this.songIds,
+    this.songKeys = const {},
   });
 
   final String title;
   final DateTime date;
   final List<String> songIds;
+  final Map<String, String> songKeys;
 
   @override
-  List<Object?> get props => [title, date, songIds];
+  List<Object?> get props => [title, date, songIds, songKeys];
 }
