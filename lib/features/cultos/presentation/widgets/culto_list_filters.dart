@@ -36,7 +36,7 @@ class CultoListFilters extends ConsumerWidget {
             onDeleted: filter.hasCustomRange
                 ? () => ref.read(cultoListFilterProvider.notifier).setCustomRange(null)
                 : null,
-            deleteButtonTooltip:
+            deleteButtonTooltipMessage:
                 filter.hasCustomRange ? 'Voltar para esta semana' : null,
           ),
           FilterChip(
