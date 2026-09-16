@@ -32,6 +32,11 @@ abstract final class DateFormatters {
     return '$day/$month/${date.year}';
   }
 
+  /// `16/09/2026 – 20/09/2026`
+  static String range(DateTime start, DateTime end) {
+    return '${short(start)} – ${short(end)}';
+  }
+
   /// `domingo, 24 de agosto de 2026`
   static String long(DateTime date) {
     final weekday = _weekdays[date.weekday - 1];

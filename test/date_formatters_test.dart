@@ -8,6 +8,13 @@ void main() {
     expect(DateFormatters.short(date), '24/08/2026');
   });
 
+  test('range joins two short dates', () {
+    expect(
+      DateFormatters.range(date, DateTime(2026, 8, 30)),
+      '24/08/2026 – 30/08/2026',
+    );
+  });
+
   test('long formats weekday and month in Portuguese', () {
     expect(DateFormatters.long(date), 'segunda-feira, 24 de agosto de 2026');
   });

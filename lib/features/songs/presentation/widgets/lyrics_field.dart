@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/inputs/app_text_editing.dart';
 
 /// Large multiline text field for the song's lyrics + chords ("cifra").
 ///
@@ -26,6 +27,7 @@ class LyricsField extends StatelessWidget {
       validator: validator,
       maxLines: 20,
       minLines: 12,
+      contextMenuBuilder: appTextContextMenuBuilder,
       style: AppTextStyles.chordSheet(context),
       decoration: const InputDecoration(
         labelText: 'Letra e cifra',

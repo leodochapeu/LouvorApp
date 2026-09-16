@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/inputs/app_text_editing.dart';
 
 /// Root widget: wires the Riverpod-backed [GoRouter] into a themed
 /// [MaterialApp.router].
@@ -27,6 +28,9 @@ class LouvorApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      builder: (context, child) {
+        return AppTextEditBar(child: child ?? const SizedBox.shrink());
+      },
       routerConfig: router,
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_text_editing.dart';
+
 /// Search input used at the top of the songs list.
 ///
 /// Shows a clear ("x") button only when there's text, and reports changes
@@ -25,6 +27,7 @@ class AppSearchField extends StatelessWidget {
           controller: controller,
           onChanged: onChanged,
           textInputAction: TextInputAction.search,
+          contextMenuBuilder: appTextContextMenuBuilder,
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: const Icon(Icons.search),

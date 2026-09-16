@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_text_editing.dart';
+
 /// Standard text field used across forms (login, song title, authors...).
 ///
 /// Wraps [TextFormField] with the app's consistent label/hint/error styling
@@ -56,6 +58,7 @@ class AppTextField extends StatelessWidget {
       minLines: minLines,
       autofocus: autofocus,
       enabled: enabled,
+      contextMenuBuilder: appTextContextMenuBuilder,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

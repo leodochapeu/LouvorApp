@@ -12,10 +12,12 @@ import '../../../../core/widgets/inputs/app_search_field.dart';
 import '../../../../core/widgets/layout/app_drawer.dart';
 import '../../../../core/widgets/layout/app_page_title.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../domain/culto_list_filter.dart';
 import '../providers/culto_providers.dart';
 import '../widgets/culto_card.dart';
+import '../widgets/culto_list_filters.dart';
 
-/// Public cultos list with search. Create/edit stays behind login.
+/// Public cultos list with search and date filters. Create/edit stays behind login.
 class CultosListPage extends ConsumerStatefulWidget {
   const CultosListPage({super.key});
 
@@ -25,7 +27,7 @@ class CultosListPage extends ConsumerStatefulWidget {
 
 class _CultosListPageState extends ConsumerState<CultosListPage> {
   late final _searchController = TextEditingController(
-    text: ref.read(cultoSearchQueryProvider),
+    text: ref.read(cultoListFilterProvider).query,
   );
 
   @override
@@ -38,7 +40,7 @@ class _CultosListPageState extends ConsumerState<CultosListPage> {
   Widget build(BuildContext context) {
     final cultosAsync = ref.watch(filteredCultosProvider);
     final isLoggedIn = ref.watch(isLoggedInProvider);
-    final hasQuery = ref.watch(cultoSearchQueryProvider).isNotEmpty;
+    final filter = ref.watch(cultoListFilterProvider);
 
     return AppPageTitle(
       title: SharePreview.pageTitle('Cultos'),
@@ -69,9 +71,10 @@ class _CultosListPageState extends ConsumerState<CultosListPage> {
                       controller: _searchController,
                       hint: 'Buscar por nome ou data',
                       onChanged: (value) =>
-                          ref.read(cultoSearchQueryProvider.notifier).state = value,
+                          ref.read(cultoListFilterProvider.notifier).setQuery(value),
                     ),
                   ),
+                  const CultoListFilters(),
                   Expanded(
                     child: cultosAsync.when(
                       skipError: true,
@@ -86,14 +89,8 @@ class _CultosListPageState extends ConsumerState<CultosListPage> {
                         if (cultos.isEmpty) {
                           return AppEmptyState(
                             icon: Icons.event_note_outlined,
-                            title: hasQuery
-                                ? 'Nenhum culto encontrado'
-                                : 'Nenhum culto cadastrado',
-                            message: hasQuery
-                                ? 'Tente buscar por outro nome ou data.'
-                                : (isLoggedIn
-                                    ? 'Toque em "Novo culto" para montar o primeiro.'
-                                    : 'Faça login para cadastrar cultos.'),
+                            title: _emptyTitle(filter),
+                            message: _emptyMessage(filter, isLoggedIn),
                           );
                         }
                         return ListView.separated(
@@ -124,5 +121,25 @@ class _CultosListPageState extends ConsumerState<CultosListPage> {
         ),
       ),
     );
+  }
+
+  String _emptyTitle(CultoListFilter filter) {
+    if (filter.hasQuery) return 'Nenhum culto encontrado';
+    if (filter.hasCustomRange) return 'Nenhum culto nesse período';
+    if (filter.includePast) return 'Nenhum culto cadastrado';
+    return 'Nenhum evento cadastrado nessa semana';
+  }
+
+  String _emptyMessage(CultoListFilter filter, bool isLoggedIn) {
+    if (filter.hasQuery) return 'Tente buscar por outro nome ou data.';
+    if (filter.hasCustomRange) {
+      return 'Tente outro intervalo, ou ative "Cultos passados" para incluir datas anteriores.';
+    }
+    if (filter.includePast) {
+      return isLoggedIn
+          ? 'Toque em "Novo culto" para montar o primeiro.'
+          : 'Faça login para cadastrar cultos.';
+    }
+    return 'Passe o período ou ative "Cultos passados" para ver outros cultos.';
   }
 }

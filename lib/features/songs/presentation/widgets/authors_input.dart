@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/chips/app_chip.dart';
+import '../../../../core/widgets/inputs/app_text_editing.dart';
 
 /// Input for the song's "autores" list: type a name and press enter/the add
 /// button to turn it into a chip; tap a chip's "x" to remove it.
@@ -58,6 +59,7 @@ class _AuthorsInputState extends State<AuthorsInput> {
                   hintText: 'Nome do autor',
                 ),
                 textInputAction: TextInputAction.done,
+                contextMenuBuilder: appTextContextMenuBuilder,
                 onSubmitted: (_) => _addAuthor(),
               ),
             ),

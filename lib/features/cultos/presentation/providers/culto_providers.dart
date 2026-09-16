@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../../../core/config/supabase_providers.dart';
-import '../../../../core/utils/date_formatters.dart';
 import '../../../../core/utils/route_id.dart';
 import '../../../songs/domain/entities/song.dart';
 import '../../../songs/presentation/providers/song_providers.dart';
 import '../../data/repositories/culto_repository_impl.dart';
+import '../../domain/culto_list_filter.dart';
 import '../../domain/culto_slug.dart';
 import '../../domain/entities/culto.dart';
 import '../../domain/repositories/culto_repository.dart';
@@ -21,8 +21,34 @@ final cultosStreamProvider = StreamProvider<List<Culto>>((ref) {
   return ref.watch(cultoRepositoryProvider).watchCultos();
 });
 
-/// Current text typed into the search field on the cultos list page.
-final cultoSearchQueryProvider = StateProvider<String>((ref) => '');
+/// Search, date range and "cultos passados" toggle on the cultos list.
+class CultoListFilterNotifier extends Notifier<CultoListFilter> {
+  @override
+  CultoListFilter build() => const CultoListFilter();
+
+  void setQuery(String query) {
+    state = state.copyWith(query: query);
+  }
+
+  void setCustomRange(CultoDateRange? range) {
+    state = state.copyWith(customRange: range);
+  }
+
+  void setIncludePast(bool includePast) {
+    final range = includePast
+        ? state.customRange
+        : CultoListFiltering.constrainRangeToUpcoming(
+            state.customRange,
+            DateTime.now(),
+          );
+    state = state.copyWith(includePast: includePast, customRange: range);
+  }
+}
+
+final cultoListFilterProvider =
+    NotifierProvider<CultoListFilterNotifier, CultoListFilter>(
+      CultoListFilterNotifier.new,
+    );
 
 /// How the culto detail page renders its setlist.
 enum CultoViewMode { cards, lyrics }
@@ -44,21 +70,18 @@ final cultoLyricsFontSizeProvider = StateProvider<double>(
   (ref) => CultoLyricsFontSize.initial,
 );
 
-/// [cultosStreamProvider] filtered by [cultoSearchQueryProvider], matching
-/// the title or the formatted date (case-insensitive).
+/// [cultosStreamProvider] filtered by [cultoListFilterProvider]: remaining
+/// services this week by default, plus optional search / range / archive.
 final filteredCultosProvider = Provider<AsyncValue<List<Culto>>>((ref) {
   final cultosAsync = ref.watch(cultosStreamProvider);
-  final query = ref.watch(cultoSearchQueryProvider).trim().toLowerCase();
-
-  if (query.isEmpty) return cultosAsync;
+  final filter = ref.watch(cultoListFilterProvider);
 
   return cultosAsync.whenData((cultos) {
-    return cultos.where((culto) {
-      final matchesTitle = culto.title.toLowerCase().contains(query);
-      final matchesDate = DateFormatters.short(culto.date).contains(query) ||
-          DateFormatters.long(culto.date).toLowerCase().contains(query);
-      return matchesTitle || matchesDate;
-    }).toList();
+    return CultoListFiltering.apply(
+      cultos: cultos,
+      filter: filter,
+      now: DateTime.now(),
+    );
   });
 });
 
