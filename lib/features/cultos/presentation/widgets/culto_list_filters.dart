@@ -3,61 +3,101 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/utils/date_formatters.dart';
+import '../../../../core/widgets/buttons/app_icon_button.dart';
+import '../../../../core/widgets/buttons/app_text_button.dart';
 import '../../domain/culto_list_filter.dart';
 import '../providers/culto_providers.dart';
 
-/// Date-range chip + "cultos passados" toggle under the cultos search field.
-class CultoListFilters extends ConsumerWidget {
-  const CultoListFilters({super.key});
+/// Filter-icon button that opens the cultos list filter dialog.
+class CultoListFilterButton extends ConsumerWidget {
+  const CultoListFilterButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(cultoListFilterProvider);
+    return Badge(
+      isLabelVisible: filter.hasActiveFilters,
+      child: AppIconButton(
+        icon: Icons.filter_alt_outlined,
+        tooltip: 'Filtros',
+        onPressed: () => CultoListFiltersDialog.show(context),
+      ),
+    );
+  }
+}
+
+/// Modal with the date range and "cultos passados" toggle.
+class CultoListFiltersDialog extends ConsumerWidget {
+  const CultoListFiltersDialog({super.key});
+
+  static Future<void> show(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => const CultoListFiltersDialog(),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(cultoListFilterProvider);
     final now = DateTime.now();
+    final range = CultoListFiltering.effectiveRange(filter, now);
+    final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSizes.md, 0, AppSizes.md, AppSizes.sm),
-      child: Wrap(
-        spacing: AppSizes.sm,
-        runSpacing: AppSizes.sm,
-        children: [
-          InputChip(
-            avatar: Icon(
-              Icons.date_range,
-              size: 18,
-              color: Theme.of(context).colorScheme.onSecondaryContainer,
+    return AlertDialog(
+      title: const Text('Filtros'),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Cultos passados'),
+              subtitle: Text(
+                filter.includePast
+                    ? 'Inclui dias anteriores dentro do período.'
+                    : 'O período não pode começar antes de hoje.',
+                style: theme.textTheme.bodySmall,
+              ),
+              value: filter.includePast,
+              onChanged: (selected) =>
+                  ref.read(cultoListFilterProvider.notifier).setIncludePast(selected),
             ),
-            label: Text(_rangeLabel(filter)),
-            selected: true,
-            showCheckmark: false,
-            visualDensity: VisualDensity.compact,
-            tooltip: 'Escolher período',
-            onPressed: () => _pickRange(context, ref, filter, now),
-            onDeleted: filter.hasCustomRange
-                ? () => ref.read(cultoListFilterProvider.notifier).setCustomRange(null)
-                : null,
-            deleteButtonTooltipMessage:
-                filter.hasCustomRange ? 'Voltar para esta semana' : null,
-          ),
-          FilterChip(
-            label: const Text('Cultos passados'),
-            tooltip: 'Incluir cultos que já ocorreram',
-            visualDensity: VisualDensity.compact,
-            selected: filter.includePast,
-            onSelected: (selected) =>
-                ref.read(cultoListFilterProvider.notifier).setIncludePast(selected),
-          ),
-        ],
+            const SizedBox(height: AppSizes.md),
+            Text('Período', style: theme.textTheme.labelMedium),
+            const SizedBox(height: AppSizes.sm),
+            OutlinedButton.icon(
+              onPressed: () => _pickRange(context, ref, filter, now),
+              icon: const Icon(Icons.date_range, size: 18),
+              label: Text(
+                DateFormatters.range(range.start, range.end),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: AppSizes.xs),
+            Text(
+              filter.hasCustomRange ? 'Intervalo personalizado' : 'Esta semana',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
+      actions: [
+        if (filter.hasActiveFilters)
+          AppTextButton(
+            label: 'Limpar',
+            onPressed: () => ref.read(cultoListFilterProvider.notifier).reset(),
+          ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Ver cultos'),
+        ),
+      ],
     );
-  }
-
-  String _rangeLabel(CultoListFilter filter) {
-    if (filter.customRange != null) {
-      return DateFormatters.range(filter.customRange!.start, filter.customRange!.end);
-    }
-    if (filter.includePast) return 'Todos os cultos';
-    return 'Esta semana';
   }
 
   Future<void> _pickRange(
@@ -68,8 +108,7 @@ class CultoListFilters extends ConsumerWidget {
   ) async {
     final firstDate = CultoListFiltering.firstSelectableDate(filter, now);
     final lastDate = CultoListFiltering.lastSelectableDate(now);
-    final fallback = CultoListFiltering.defaultRange(now);
-    final current = filter.customRange ?? fallback;
+    final current = CultoListFiltering.effectiveRange(filter, now);
 
     var start = CultoListFiltering.dateOnly(current.start);
     var end = CultoListFiltering.dateOnly(current.end);

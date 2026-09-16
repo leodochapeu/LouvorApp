@@ -43,6 +43,10 @@ class CultoListFilterNotifier extends Notifier<CultoListFilter> {
           );
     state = state.copyWith(includePast: includePast, customRange: range);
   }
+
+  void reset() {
+    state = CultoListFilter(query: state.query);
+  }
 }
 
 final cultoListFilterProvider =
@@ -71,7 +75,7 @@ final cultoLyricsFontSizeProvider = StateProvider<double>(
 );
 
 /// [cultosStreamProvider] filtered by [cultoListFilterProvider]: remaining
-/// services this week by default, plus optional search / range / archive.
+/// services this week by default, plus optional search / range / past days.
 final filteredCultosProvider = Provider<AsyncValue<List<Culto>>>((ref) {
   final cultosAsync = ref.watch(cultosStreamProvider);
   final filter = ref.watch(cultoListFilterProvider);

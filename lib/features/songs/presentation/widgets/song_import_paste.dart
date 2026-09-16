@@ -22,6 +22,7 @@ class SongImportPaste extends StatefulWidget {
 class _SongImportPasteState extends State<SongImportPaste> {
   late final _controller = TextEditingController();
   String? _error;
+  bool _expanded = false;
 
   @override
   void dispose() {
@@ -61,11 +62,52 @@ class _SongImportPasteState extends State<SongImportPaste> {
     final theme = Theme.of(context);
 
     return AppCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Importar do JSON', style: theme.textTheme.titleSmall),
-          const SizedBox(height: AppSizes.xs),
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSizes.md),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Importar do JSON',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _expanded ? _expandedBody(theme) : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _expandedBody(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.md,
+        0,
+        AppSizes.md,
+        AppSizes.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           Text(
             'Cole o JSON da cifra para preencher nome, autor, tons e a letra.',
             style: theme.textTheme.bodySmall?.copyWith(

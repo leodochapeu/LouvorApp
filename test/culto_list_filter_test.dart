@@ -47,18 +47,28 @@ void main() {
     expect(apply([utcToday]).map((c) => c.id), ['utc']);
   });
 
-  test('includePast without a range shows the full archive', () {
+  test('includePast keeps the week window and only adds past days in it', () {
     final visible = apply(
       [yesterday, today, sunday, nextMonday],
       filter: const CultoListFilter(includePast: true),
     );
-    expect(visible.map((c) => c.id), ['proxima', 'domingo', 'hoje', 'ontem']);
+    expect(visible.map((c) => c.id), ['ontem', 'hoje', 'domingo']);
   });
 
-  test('a custom range overrides the current week', () {
+  test('includePast does not surface cultos from another week', () {
+    final lastSunday = culto('anterior', DateTime(2026, 9, 13));
+    final visible = apply(
+      [lastSunday, yesterday, today, nextMonday],
+      filter: const CultoListFilter(includePast: true),
+    );
+    expect(visible.map((c) => c.id), ['ontem', 'hoje']);
+  });
+
+  test('a custom range still applies when includePast is on', () {
     final visible = apply(
       [yesterday, today, sunday, nextMonday],
       filter: CultoListFilter(
+        includePast: true,
         customRange: CultoDateRange(
           start: DateTime(2026, 9, 21),
           end: DateTime(2026, 9, 27),

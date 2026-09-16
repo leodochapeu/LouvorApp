@@ -18,7 +18,8 @@ class CultoDateRange extends Equatable {
 ///
 /// By default the list only shows remaining services in the current week
 /// (today through Sunday). Past days disappear the day after they occur.
-/// [includePast] opens the archive; [customRange] overrides the week window.
+/// [includePast] includes earlier days **inside the same date window**;
+/// [customRange] overrides the week.
 class CultoListFilter extends Equatable {
   const CultoListFilter({
     this.query = '',
@@ -32,6 +33,7 @@ class CultoListFilter extends Equatable {
 
   bool get hasQuery => query.trim().isNotEmpty;
   bool get hasCustomRange => customRange != null;
+  bool get hasActiveFilters => hasCustomRange || includePast;
 
   CultoListFilter copyWith({
     String? query,
@@ -60,6 +62,12 @@ abstract final class CultoListFiltering {
   static DateTime dateOnly(DateTime date) =>
       DateTime(date.year, date.month, date.day);
 
+  /// Monday of the ISO week that contains [day].
+  static DateTime startOfWeek(DateTime day) {
+    final start = dateOnly(day);
+    return start.subtract(Duration(days: start.weekday - DateTime.monday));
+  }
+
   /// Last day of the ISO week (Sunday) that contains [day].
   static DateTime endOfWeek(DateTime day) {
     final start = dateOnly(day);
@@ -72,12 +80,31 @@ abstract final class CultoListFiltering {
     return CultoDateRange(start: today, end: endOfWeek(today));
   }
 
+  /// Date window actually applied to the list.
+  ///
+  /// Custom range wins; otherwise this week. [CultoListFilter.includePast]
+  /// only unlocks days before today inside that window — it never drops
+  /// the period filter.
+  static CultoDateRange effectiveRange(CultoListFilter filter, DateTime now) {
+    final today = dateOnly(now);
+    if (filter.customRange != null) {
+      var start = dateOnly(filter.customRange!.start);
+      final end = dateOnly(filter.customRange!.end);
+      if (!filter.includePast && start.isBefore(today)) start = today;
+      return CultoDateRange(start: start, end: end);
+    }
+    final start = filter.includePast ? startOfWeek(today) : today;
+    return CultoDateRange(start: start, end: endOfWeek(today));
+  }
+
   /// Earliest day the date-range picker may select.
   ///
   /// Past days stay disabled until [CultoListFilter.includePast] is on.
   static DateTime firstSelectableDate(CultoListFilter filter, DateTime now) {
     final today = dateOnly(now);
-    if (filter.includePast) return DateTime(today.year - 5);
+    if (filter.includePast) {
+      return DateTime(today.year - 5, today.month, today.day);
+    }
     return today;
   }
 
@@ -107,25 +134,10 @@ abstract final class CultoListFiltering {
     required DateTime now,
   }) {
     final query = filter.query.trim().toLowerCase();
-    final today = dateOnly(now);
-    final weekEnd = endOfWeek(today);
-    final custom = filter.customRange == null
-        ? null
-        : CultoDateRange(
-            start: dateOnly(filter.customRange!.start),
-            end: dateOnly(filter.customRange!.end),
-          );
+    final range = effectiveRange(filter, now);
 
     final matches = cultos.where((culto) {
-      if (!_matchesDate(
-        date: dateOnly(culto.date),
-        today: today,
-        weekEnd: weekEnd,
-        custom: custom,
-        includePast: filter.includePast,
-      )) {
-        return false;
-      }
+      if (!_inRange(dateOnly(culto.date), range)) return false;
       if (query.isEmpty) return true;
       return culto.title.toLowerCase().contains(query) ||
           DateFormatters.short(culto.date).contains(query) ||
@@ -134,30 +146,16 @@ abstract final class CultoListFiltering {
 
     matches.sort((a, b) {
       final byDate = dateOnly(a.date).compareTo(dateOnly(b.date));
-      if (byDate != 0) {
-        // Archive of every culto: most recent first. Week / range: soonest first.
-        if (filter.includePast && custom == null) return -byDate;
-        return byDate;
-      }
+      if (byDate != 0) return byDate;
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
     return matches;
   }
 
-  static bool _matchesDate({
-    required DateTime date,
-    required DateTime today,
-    required DateTime weekEnd,
-    required CultoDateRange? custom,
-    required bool includePast,
-  }) {
-    if (custom != null) {
-      if (date.isBefore(custom.start) || date.isAfter(custom.end)) return false;
-      if (!includePast && date.isBefore(today)) return false;
-      return true;
-    }
-    if (includePast) return true;
-    if (date.isBefore(today) || date.isAfter(weekEnd)) return false;
-    return true;
+  static bool _inRange(DateTime date, CultoDateRange range) {
+    final start = dateOnly(range.start);
+    final end = dateOnly(range.end);
+    if (end.isBefore(start)) return false;
+    return !date.isBefore(start) && !date.isAfter(end);
   }
 }

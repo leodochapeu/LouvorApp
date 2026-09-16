@@ -67,14 +67,21 @@ class _CultosListPageState extends ConsumerState<CultosListPage> {
                       AppSizes.md,
                       AppSizes.sm,
                     ),
-                    child: AppSearchField(
-                      controller: _searchController,
-                      hint: 'Buscar por nome ou data',
-                      onChanged: (value) =>
-                          ref.read(cultoListFilterProvider.notifier).setQuery(value),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppSearchField(
+                            controller: _searchController,
+                            hint: 'Buscar por nome ou data',
+                            onChanged: (value) => ref
+                                .read(cultoListFilterProvider.notifier)
+                                .setQuery(value),
+                          ),
+                        ),
+                        const CultoListFilterButton(),
+                      ],
                     ),
                   ),
-                  const CultoListFilters(),
                   Expanded(
                     child: cultosAsync.when(
                       skipError: true,
@@ -90,7 +97,7 @@ class _CultosListPageState extends ConsumerState<CultosListPage> {
                           return AppEmptyState(
                             icon: Icons.event_note_outlined,
                             title: _emptyTitle(filter),
-                            message: _emptyMessage(filter, isLoggedIn),
+                            message: _emptyMessage(filter),
                           );
                         }
                         return ListView.separated(
@@ -126,20 +133,14 @@ class _CultosListPageState extends ConsumerState<CultosListPage> {
   String _emptyTitle(CultoListFilter filter) {
     if (filter.hasQuery) return 'Nenhum culto encontrado';
     if (filter.hasCustomRange) return 'Nenhum culto nesse período';
-    if (filter.includePast) return 'Nenhum culto cadastrado';
     return 'Nenhum evento cadastrado nessa semana';
   }
 
-  String _emptyMessage(CultoListFilter filter, bool isLoggedIn) {
+  String _emptyMessage(CultoListFilter filter) {
     if (filter.hasQuery) return 'Tente buscar por outro nome ou data.';
     if (filter.hasCustomRange) {
       return 'Tente outro intervalo, ou ative "Cultos passados" para incluir datas anteriores.';
     }
-    if (filter.includePast) {
-      return isLoggedIn
-          ? 'Toque em "Novo culto" para montar o primeiro.'
-          : 'Faça login para cadastrar cultos.';
-    }
-    return 'Passe o período ou ative "Cultos passados" para ver outros cultos.';
+    return 'Abra os filtros para mudar o período ou ver cultos passados.';
   }
 }

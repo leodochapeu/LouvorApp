@@ -263,7 +263,7 @@ class _SongFormBodyState extends ConsumerState<_SongFormBody> {
           children: [
             if (widget.song == null) ...[
               SongImportPaste(onParsed: _applyImport),
-              const SizedBox(height: AppSizes.xl),
+              const SizedBox(height: AppSizes.lg),
             ],
             AppTextField(
               controller: _titleController,
